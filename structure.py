@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from dacite import from_dict, Config
+from loguru import logger
 
 
 @dataclass
@@ -51,8 +52,22 @@ class ProjectConfig:
         if self.end is None:
             self.end = max((r.end for r in self.ranges), default=0)
 
-        assert sum(1 for r in self.ranges if r.start < self.start or r.end > self.end) == 0, \
-            "所有 Range 的 start 和 end 必须在 ProjectConfig 的 start 和 end 范围内"
+        # assert sum(1 for r in self.ranges if r.start < self.start or r.end > self.end) == 0, \
+        #     "所有 Range 的 start 和 end 必须在 ProjectConfig 的 start 和 end 范围内"
+
+        if sum(1 for r in self.ranges if r.start < self.start or r.end > self.end) != 0:
+            logger.warning("警告: 有 Range 的 start 和 end 不在 ProjectConfig 的 start 和 end 范围内, 将自动调整 Range 的 start 和 end")
+            new_range = []
+            for r in self.ranges:
+                if r.end <= self.start or r.start >= self.end:
+                    logger.warning(f"警告: Range {r} 完全在 ProjectConfig 范围外, 将被移除")
+                    continue
+                new_start = max(r.start, self.start)
+                new_end = min(r.end, self.end)
+                if new_start != r.start or new_end != r.end:
+                    logger.warning(f"警告: Range {r} 的 start 或 end 超出 ProjectConfig 范围, 将被调整为 ({new_start}, {new_end})")
+                new_range.append(Range(start=new_start, end=new_end, clips=r.clips, texts=r.texts))
+            self.ranges = new_range
 
         assert sum(r.end - r.start for r in self.ranges) == self.end - self.start, \
             "所有 Range 的时间段必须完整覆盖 ProjectConfig 的时间段，且不能重叠"
@@ -83,11 +98,12 @@ class ProjectConfig:
         # 填充 Clip 的 start 和 end
         last_source = 'black'
         last_end = None
+        last_volume = 0
         for r in self.ranges:
             sum_length = sum((clip.end - clip.start) for clip in r.clips if clip.start is not None and clip.end is not None)
             if len(r.clips) == 0:
-                print(f"日志: Range {r} 内没有任何 Clip, 自动延续上一个 Clip")
-                r.clips.append(Clip(source=last_source, start=last_end if last_source != 'black' else 0))
+                logger.debug(f"日志: Range {r} 内没有任何 Clip, 自动延续上一个 Clip")
+                r.clips.append(Clip(source=last_source, start=last_end if last_source != 'black' else 0, volume=last_volume))
             for clip in r.clips:
                 if clip.start is None:
                     clip.start = clip.end - (r.end - r.start - sum_length)
@@ -98,6 +114,7 @@ class ProjectConfig:
             assert sum_length == r.end - r.start, f"每个 Range 内 Clip 的总长度必须等于 Range 的长度 {r}"
             last_source = r.clips[-1].source
             last_end = r.clips[-1].end
+            last_volume = r.clips[-1].volume
 
 
 def parse_config(data) -> ProjectConfig:
