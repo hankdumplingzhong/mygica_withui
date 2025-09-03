@@ -229,25 +229,30 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
         else:
             # 正常视频处理（保持原来的精确帧数控制）
             start_time = frame_to_timestamp(clip.start, config.project.fps)
-            cmd = [
-                'ffmpeg', '-y', '-hide_banner',
-                '-ss', start_time,
-                '-i', src_path,
-                # '-i', bgm,  # 如果在片段中添加背景音乐
-                # '-r', str(config.project.fps),  # 设置帧率
-                # '-fps_mode', 'cfr',
-                # '-pix_fmt', 'yuv420p10le',
-                # '-t', str((rng.end - rng.start) / ((24000 / 1001) if project.fps == '24000/1001' else project.fps)),
+            if clip.sound:
+                sound_path = config.project.sources[clip.sound]
+                # 如果在片段中替换音频
+                cmd = [
+                    'ffmpeg', '-y', '-hide_banner',
+                    '-ss', start_time,
+                    '-i', src_path,
+                    '-i', sound_path,  # 替换音频
+                    '-map', '0:v',
+                    '-map', '1:a',
+                ]
+            else:
+                cmd = [
+                    'ffmpeg', '-y', '-hide_banner',
+                    '-ss', start_time,
+                    '-i', src_path,
+                ]
+            cmd.extend([
                 '-vframes', str(frame_count),  # 使用精确帧数
-                # '-filter_complex',
-                # f'[1:a]atrim=start={project_start_time}[a1];' + af_in + '[a1]amix=inputs=2:duration=first[a]',
-                # '-map', '[a]',
-                # '-map', '0:v',
                 '-c:a', 'aac',
                 '-b:a', '128k',
                 '-ar', '44100',  # 统一采样率
                 '-ac', '2',  # 统一声道数
-            ]
+            ])
             # 添加视频滤镜（如果有）
             if vf_filter:
                 cmd.extend(['-vf', vf_filter])
@@ -285,7 +290,7 @@ def cat_video(output: Path, segment_files: list[Path], config: ScriptConfig, par
               str(output)
           ]
     print(cmd)
-    subprocess_run(cmd)
+    subprocess_run(cmd, stream_terminal=False)
     print(f"✅ 成功生成: {output}")
 
 

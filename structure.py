@@ -7,10 +7,11 @@ from loguru import logger
 
 @dataclass
 class Clip:
-    source: str
+    source: str  # source 的 key
     start: Optional[int] = None
     end: Optional[int] = None
     volume: float = 0.0
+    sound: Optional[str] = None  # sound 的 key
 
     def __post_init__(self):
         if self.source == 'black':
@@ -99,6 +100,15 @@ class ProjectConfig:
         last_source = 'black'
         last_end = None
         last_volume = 0
+
+        for r in reversed(self.ranges):
+            if r.clips:
+                last_source = r.clips[0].source
+                last_end = r.clips[0].start if r.clips[0].start is not None else last_end - (r.end - r.start)
+                last_volume = r.clips[0].volume
+            elif last_end is not None:
+                last_end = last_end - (r.end - r.start)
+
         for r in self.ranges:
             sum_length = sum((clip.end - clip.start) for clip in r.clips if clip.start is not None and clip.end is not None)
             if len(r.clips) == 0:
@@ -121,6 +131,7 @@ def parse_config(data) -> ProjectConfig:
     # 配置 dacite 忽略额外字段（可选），并支持嵌套
     config = Config(
         forward_references={"Clip": Clip, "Text": Text, "Range": Range},
+        strict=True
         # 不强制所有字段都存在（允许 dict 多余键）
     )
     project_config = from_dict(

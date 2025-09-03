@@ -1,7 +1,7 @@
 [project]
 name = "MyGICA"
 version = "1.0.0"
-description = "My Glimpse Instructions for Cutting Abandon of MyGO!!!!! & MUJICA"
+description = "My Glimpse Interface for Cutting Abandon of MyGO!!!!! & MUJICA"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

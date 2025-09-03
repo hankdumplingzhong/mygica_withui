@@ -46,8 +46,8 @@ start = {start_frame}
 end = {end_frame}''')
         if sub.text.strip():
             print(
-                f'''  [[ranges.texts]]
-  text = "{sub.text}"'''
+                f'''[[ranges.texts]]
+text = "{sub.text}"'''
             )
         print()
 
