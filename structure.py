@@ -56,6 +56,14 @@ class ProjectConfig:
         # assert sum(1 for r in self.ranges if r.start < self.start or r.end > self.end) == 0, \
         #     "所有 Range 的 start 和 end 必须在 ProjectConfig 的 start 和 end 范围内"
 
+        # 检查 start end 有序性
+        assert self.start < self.end, "ProjectConfig 的 start 必须小于 end"
+        for r in self.ranges:
+            assert r.start < r.end, f"Range 的 start 必须小于 end, {r=}"
+        for i in range(len(self.ranges) - 1):
+            assert self.ranges[i].end <= self.ranges[i + 1].start, f"Range 之间不能重叠, {self.ranges[i]=}, {self.ranges[i + 1]=}"
+
+        # 检查所有 Range 的 start 和 end 是否在 ProjectConfig 的 start 和 end 范围内，自动调整超出部分
         if sum(1 for r in self.ranges if r.start < self.start or r.end > self.end) != 0:
             logger.warning("警告: 有 Range 的 start 和 end 不在 ProjectConfig 的 start 和 end 范围内, 将自动调整 Range 的 start 和 end")
             new_range = []
@@ -70,14 +78,21 @@ class ProjectConfig:
                 new_range.append(Range(start=new_start, end=new_end, clips=r.clips, texts=r.texts))
             self.ranges = new_range
 
-        assert sum(r.end - r.start for r in self.ranges) == self.end - self.start, \
-            "所有 Range 的时间段必须完整覆盖 ProjectConfig 的时间段，且不能重叠"
-
-        assert sum(self.ranges[i].end == self.ranges[i + 1].start for i in range(len(self.ranges) - 1)) == len(self.ranges) - 1, \
-            "所有 Range 的时间段必须完整覆盖 ProjectConfig 的时间段，且不能重叠"
-
-        assert sum(1 for r in self.ranges if r.start >= r.end) == 0, \
-            "所有 Range 的 start 必须小于 end"
+        # 所有 Range 的时间段必须完整覆盖 ProjectConfig 的时间段，自动补全空白部分
+        if sum(r.end - r.start for r in self.ranges) != self.end - self.start:
+            logger.warning("警告: 所有 Range 的时间段未完整覆盖 ProjectConfig 的时间段，或有重叠部分，自动补全空白部分")
+            new_ranges = []
+            current_start = self.start
+            for r in self.ranges:
+                if r.start > current_start:
+                    logger.warning(f"警告: 在 {current_start} 到 {r.start} 之间有空白时间段, 将自动补全一个 Range")
+                    new_ranges.append(Range(start=current_start, end=r.start, clips=[], texts=[]))
+                new_ranges.append(r)
+                current_start = r.end
+            if current_start < self.end:
+                logger.warning(f"警告: 在 {current_start} 到 {self.end} 之间有空白时间段, 将自动补全一个 Range")
+                new_ranges.append(Range(start=current_start, end=self.end, clips=[], texts=[]))
+            self.ranges = new_ranges
 
         # 检查 Clip 的 source 是否在 sources 中
         all_sources = set(self.sources.keys())

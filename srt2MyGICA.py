@@ -21,9 +21,8 @@ def time_to_frames(time: pysrt.SubRipTime, fps: float) -> int:
     return frame_number
 
 
-def adjust_subtitle(subtitle_path: Path) -> None:
+def adjust_subtitle(subtitle_path: Path, fps: float = 24000 / 1001) -> None:
     subs = pysrt.open(subtitle_path, encoding="utf-8")
-    fps = 24000 / 1001  # 23.976 fps
 
     for sub in subs:
         # 获取开始时间的帧序号
@@ -36,22 +35,17 @@ def adjust_subtitle(subtitle_path: Path) -> None:
         # print(f"开始时间: {sub.start} -> 开始帧: {start_frame}")
         # print(f"结束时间: {sub.end} -> 结束帧: {end_frame}")
         # print(f"字幕内容: {sub.text}")
-        #         print(
-        # f'''range [{start_frame}:{end_frame}]
-        #     text {sub.text}
-        # ''')
-        print(
-            f'''[[ranges]]
-start = {start_frame}
-end = {end_frame}''')
+
+        print('[[ranges]]')
+        print(f'start = {start_frame}')
+        print(f'end = {end_frame}')
+        text = repr(sub.text).strip("\"\'")
         if sub.text.strip():
-            print(
-                f'''[[ranges.texts]]
-text = "{sub.text}"'''
-            )
+            print('[[ranges.texts]]')
+            print(f'text = "{text}"')
         print()
 
 
 if __name__ == "__main__":
-    srt_file = Path(r"D:\Videos\Chihaya不思议\Chihaya不思议(1).mod.srt")
+    srt_file = Path('path/to/your/subtitle.srt')
     adjust_subtitle(srt_file)

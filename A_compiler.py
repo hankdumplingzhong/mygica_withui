@@ -12,7 +12,7 @@ from structure import parse_config, Range, Text, ProjectConfig
 
 @dataclass
 class ScriptConfig:
-    toml_path: Path
+    MyGICA_path: Path
     project: ProjectConfig = None
     output: Path = None
     fontfile: Path = Path("SC-Heavy.otf")
@@ -26,8 +26,8 @@ class ScriptConfig:
     video_preset_cat_all: list[str] = field(default_factory=lambda: ['-c:v', 'copy', '-c:a', 'copy'])
 
     def __post_init__(self):
-        assert self.toml_path.suffixes[-2:] == ['.MyGICA', '.toml'], 'need .MyGICA.toml file'
-        assert self.toml_path.exists(), '.MyGICA.toml file should exists'
+        assert self.MyGICA_path.suffixes[-2:] == ['.MyGICA', '.toml'], 'need .MyGICA.toml file'
+        assert self.MyGICA_path.exists(), '.MyGICA.toml file should exists'
         assert self.fontfile.exists(), 'font file should exists'
         self.tmpdir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -35,7 +35,7 @@ class ScriptConfig:
         # =============================
         # 解析配置文件，并且生成 ProjectConfig 对象时排除不合法的情况
         # =============================
-        with self.toml_path.open('rb') as f:
+        with self.MyGICA_path.open('rb') as f:
             self.project = parse_config(tomllib.load(f))
 
         assert Path(self.project.project_name).suffix in {'.mp4', '.mkv', '.mov'}, 'output file should be .mp4/.mkv/.mov'
@@ -193,7 +193,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
     for i, clip in enumerate(rng.clips):
         src_path = config.project.sources[clip.source]
         project_start_time = frame_to_time(now_time, config.project.fps)
-        bgm = config.project.sources['bgm']
+        # bgm = config.project.sources['bgm']
         frame_count = clip.end - clip.start  # 精确帧数
 
         clip_file = seg_file.with_stem(seg_file.stem + f'_{i}') if len(rng.clips) > 1 else seg_file
@@ -354,8 +354,8 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path) -> Path:
 # 启动
 # =============================
 def main() -> None:
-    toml_path = Path('示例.MyGICA.toml')
-    config = ScriptConfig(toml_path=toml_path)
+    MyGICA_path = Path('示例.MyGICA.toml')  # noqa: N806
+    config = ScriptConfig(MyGICA_path=MyGICA_path)
     work(config)
 
 
