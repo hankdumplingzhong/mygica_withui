@@ -23,6 +23,7 @@ def time_to_frames(time: pysrt.SubRipTime, fps: float) -> int:
 
 def adjust_subtitle(subtitle_path: Path, fps: float = 24000 / 1001) -> None:
     subs = pysrt.open(subtitle_path, encoding="utf-8")
+    first = True
 
     for sub in subs:
         # 获取开始时间的帧序号
@@ -43,6 +44,11 @@ def adjust_subtitle(subtitle_path: Path, fps: float = 24000 / 1001) -> None:
         if sub.text.strip():
             print('[[ranges.texts]]')
             print(f'text = "{text}"')
+        if first:
+            first = False
+            print("[[ranges.clips]]")
+            print("source = 'black'")
+            print("start = 0")
         print()
 
 

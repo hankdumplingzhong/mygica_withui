@@ -4,11 +4,9 @@
 
 **MyGICA** (My Glimpse Interface for Cutting Abandon of MyGO!!!!! & MUJICA) 是一个文本化、结构化的视频剪辑工具，用于盯帧剪辑 MyGICA 填词 / MAD 视频。简单地说，就是代码剪视频且剪辑单位为帧。
 
-目前本项目**并非 AI 项目**，只是将**视频剪辑流程文本化、结构化**，可以作为与其他人或 AI **协作的接口**，因此并不能自动剪辑。
+目前本项目**并非 AI 项目**，只是将**视频剪辑流程文本化、结构化**，可以作为与其他人或 AI **协作的接口**，因此并不能自动剪辑。MyGICA 使用 TOML 文本作为剪辑说明，扩展名为 .MyGICA.toml，Python + FFmpeg 作为编译器。
 
 目前发展方向有二：1、传统功能。继续优化数据结构和编译器以支持更多功能或简化使用难度。2、AI 功能。使用 AI 生成 .MyGICA.toml 文件初稿（不看好）。
-
-MyGICA 使用 TOML 文本作为剪辑说明，扩展名为 .MyGICA.toml，Python + FFmpeg 作为编译器。
 
 MyGICA 优先实现了符合通常 MyGICA 填词 / MAD 剪辑习惯的编译器，如：先确定时间范围，再在范围内定义字幕与片段；字幕常使用应援色；默认总有 bgm 等。
 

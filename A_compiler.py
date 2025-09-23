@@ -38,8 +38,8 @@ class ScriptConfig:
         with self.MyGICA_path.open('rb') as f:
             self.project = parse_config(tomllib.load(f))
 
-        assert Path(self.project.project_name).suffix in {'.mp4', '.mkv', '.mov'}, 'output file should be .mp4/.mkv/.mov'
-        self.output = self.output_dir / self.project.project_name
+        assert self.project.project_suffix in {'.mp4', '.mkv', '.mov'}, 'output file should be .mp4/.mkv/.mov'
+        self.output = self.output_dir / self.MyGICA_path.with_suffix(self.project.project_suffix)
 
 
 # =============================
@@ -154,7 +154,7 @@ def work(config: ScriptConfig) -> None:
     project = config.project
     pprint(project)
 
-    print(f"🎬 开始处理项目: {project.project_name}")
+    print(f"🎬 开始处理项目: {config.MyGICA_path}")
     segment_files = []
 
     # =============================
@@ -198,9 +198,9 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
 
         clip_file = seg_file.with_stem(seg_file.stem + f'_{i}') if len(rng.clips) > 1 else seg_file
 
-        af = ['-af', f'volume={clip.volume}dB'] if clip.volume != 0 else []
-        af_inline = f'volume={clip.volume}dB' if clip.volume != 0 else ''
-        af_in = f'[0:a]{af_inline}[a0_vol];[a0_vol]' if clip.volume != 0 else '[0:a]'
+        af = ['-af', f'volume={clip.volume}dB'] if clip.volume is not None else []
+        af_inline = f'volume={clip.volume}dB' if clip.volume is not None else ''
+        af_in = f'[0:a]{af_inline}[a0_vol];[a0_vol]' if clip.volume is not None else '[0:a]'
 
         # 判断 source 是否是图片
         if is_image(Path(src_path)):
