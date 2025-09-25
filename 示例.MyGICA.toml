@@ -1,7 +1,8 @@
 # MyGICA v1.0 (TOML)
 
 fps = '24000/1001'
-project_name = "千早不思议_sample.mp4"
+#project_name = "千早不思议_sample.mp4"
+project_suffix = '.mp4'
 # 使用自动推测
 #start = 1907
 #end = 2098

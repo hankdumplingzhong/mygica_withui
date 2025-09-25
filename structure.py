@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Literal
 
 from dacite import from_dict, Config
 from loguru import logger
@@ -27,6 +27,7 @@ class Text:
     fontcolor: str = 'white'
     borderw: int = 6
     bordercolor: str = '#333333'
+    align: Literal['center', 'upper left'] = 'center'
 
 
 @dataclass
@@ -96,8 +97,8 @@ class ProjectConfig:
             self.ranges = new_ranges
 
         # 检查 Clip 的 source 是否在 sources 中
-        NEXT = 'NEXT'
-        PREV = 'PREV'
+        NEXT = 'NEXT'  # noqa: N806
+        PREV = 'PREV'  # noqa: N806
         all_sources = set(self.sources.keys()) | {NEXT, PREV}
         for r in self.ranges:
             for clip in r.clips:
