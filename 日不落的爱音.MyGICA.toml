@@ -1,0 +1,695 @@
+# MyGICA v1.0 (TOML)
+
+fps = '24000/1001'
+#project_name = "日不落的爱音.mkv"
+project_suffix = '.mp4'
+# 使用自动推测
+#start = 720
+#start = 4508
+#end = 5050
+#end = 5500
+
+# =====================================
+# 源文件定义
+# =====================================
+
+[sources]
+go1 = 'D:\qbitdownload\short\mygo\mygo1.mkv'
+go2 = 'D:\qbitdownload\short\mygo\mygo2.mkv'
+go3 = 'D:\qbitdownload\short\mygo\mygo3.mkv'
+go4 = 'D:\qbitdownload\short\mygo\mygo4.mkv'
+go5 = 'D:\qbitdownload\short\mygo\mygo5.mkv'
+go6 = 'D:\qbitdownload\short\mygo\mygo6.mkv'
+go7 = 'D:\qbitdownload\short\mygo\mygo7.mkv'
+go8 = 'D:\qbitdownload\short\mygo\mygo8.mkv'
+go9 = 'D:\qbitdownload\short\mygo\mygo9.mkv'
+go10 = 'D:\qbitdownload\short\mygo\mygo10.mkv'
+go11 = 'D:\qbitdownload\short\mygo\mygo11.mkv'
+go12 = 'D:\qbitdownload\short\mygo\mygo12.mkv'
+go13 = 'D:\qbitdownload\short\mygo\mygo13.mkv'
+
+ji1 = 'D:\qbitdownload\short\mujica\mujica1.mkv'
+ji2 = 'D:\qbitdownload\short\mujica\mujica2.mkv'
+ji3 = 'D:\qbitdownload\short\mujica\mujica3.mkv'
+ji4 = 'D:\qbitdownload\short\mujica\mujica4.mkv'
+ji5 = 'D:\qbitdownload\short\mujica\mujica5.mkv'
+ji6 = 'D:\qbitdownload\short\mujica\mujica6.mkv'
+ji7 = 'D:\qbitdownload\short\mujica\mujica7.mkv'
+ji8 = 'D:\qbitdownload\short\mujica\mujica8.mkv'
+ji9 = 'D:\qbitdownload\short\mujica\mujica9.mkv'
+ji10 = 'D:\qbitdownload\short\mujica\mujica10.mkv'
+ji11 = 'D:\qbitdownload\short\mujica\mujica11.mkv'
+ji12 = 'D:\qbitdownload\short\mujica\mujica12.mkv'
+ji13 = 'D:\qbitdownload\short\mujica\mujica13.mkv'
+
+black = 'cache_in\test_video_basic.mkv'
+# 由 0_gen_black.py 生成的测试视频
+
+bgm = 'D:\Music\日不落3_MixDown.wav'
+# 找个音频替换上面这个，默认需要这个文件存在
+
+san-anon = 'D:\Pictures\圣爱音.png'
+
+# =====================================
+# 应援色定义
+# =====================================
+
+[colors]
+'灯' = '#77BBDD'
+'爱音' = '#FF8899'
+'乐奈' = '#77DD77'
+'素世' = '#FFDD88'
+'立希' = '#7777AA'
+'MyGO!!!!!' = '#3388BB'
+
+'初华' = '#BB9955'
+'睦' = '#779977'
+'海铃' = '#335566'
+'若麦' = '#AA4477'
+'祥子' = '#7799CC'
+'Ave Mujica' = '#881144'
+
+'tomori' = '#77BBDD'
+'anon' = '#FF8899'
+'rana' = '#77DD77'
+'soyo' = '#FFDD88'
+'taki' = '#7777AA'
+'mygo' = '#3388BB'
+
+'uika' = '#BB9955'
+'mutsumi' = '#779977'
+'umiri' = '#335566'
+'nyamu' = '#AA4477'
+'saki' = '#7799CC'
+'mujica' = '#881144'
+
+# =====================================
+# 时间范围与字幕/动作定义
+# =====================================
+
+#[[ranges]]
+#start = 0
+#end = 624
+#[[ranges.clips]]
+#source = 'NEXT'
+
+[[ranges]]
+start = 636
+end = 660
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 660
+end = 732
+[[ranges.texts]]
+text = '''日不落的爱音（使用MyGICA项目剪辑）
+填词：@不死の祥云
+调音：@不死の祥云
+剪辑：@不死の祥云
+项目：@不死の祥云
+部分填词：@鬼街穿堂风
+'''
+y = 540
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 732
+end = 822
+[[ranges.texts]]
+text = "日本千早降临爱音东京"
+[[ranges.clips]]
+source = 'go1'
+start = 5595
+volume = -50
+
+[[ranges]]
+start = 822
+end = 911
+[[ranges.texts]]
+text = "甜味溢出捕获偷摸零"
+[[ranges.clips]]
+source = 'go1'
+end = 7290
+
+[[ranges]]
+start = 911
+end = 1002
+[[ranges.texts]]
+text = "竟然被用计谋放倒在地"
+[[ranges.clips]]
+source = 'go1'
+end = 17302
+
+[[ranges]]
+start = 1002
+end = 1046
+[[ranges.texts]]
+text = "发动少女引力"
+[[ranges.clips]]
+source = "go1"
+start = 29014
+volume = -50
+
+[[ranges]]
+start = 1092
+end = 1181
+[[ranges.texts]]
+text = "独处一室再将门窗紧闭"
+[[ranges.clips]]
+source = "go6"
+end = 276
+
+[[ranges]]
+start = 1181
+end = 1264
+[[ranges.texts]]
+text = "静心观察天空的星星"
+[[ranges.clips]]
+source = 'go2'
+start = 28248
+volume = -50
+
+[[ranges]]
+start = 1271
+end = 1360
+[[ranges.texts]]
+text = "扫弦的手法笨拙又无力"
+[[ranges.clips]]
+source = 'go6'
+start = 548
+
+[[ranges]]
+start = 1360
+end = 1405
+[[ranges.texts]]
+text = "是美丽的风景"
+
+[[ranges]]
+start = 1451
+end = 1542
+[[ranges.texts]]
+text = "我要送你日不落的想念"
+[[ranges.clips]]
+source = 'go2'
+end = 5559
+volume = -50
+
+[[ranges]]
+start = 1542
+end = 1625
+[[ranges.texts]]
+text = "送出代表爱的创可贴"
+
+[[ranges]]
+start = 1631
+end = 1721
+[[ranges.texts]]
+text = "我要送你日不落的爱恋"
+[[ranges.clips]]
+source = 'go5'
+end = 30043
+volume = -50
+
+[[ranges]]
+start = 1721
+end = 1805
+[[ranges.texts]]
+text = "心贴着心把世界走遍"
+
+[[ranges]]
+start = 1811
+end = 1856
+[[ranges.texts]]
+text = "来我床上面"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 1856
+end = 1900
+[[ranges.texts]]
+text = "来我被里面"
+
+[[ranges]]
+start = 1901
+end = 1945
+[[ranges.texts]]
+text = "来和我排练"
+[[ranges.clips]]
+source = 'go6'
+start = 12946
+
+[[ranges]]
+start = 1992
+end = 2036
+[[ranges.texts]]
+text = "明明才昨天"
+[[ranges.clips]]
+source = 'go10'
+start = 19081
+volume = -50
+
+[[ranges]]
+start = 2036
+end = 2080
+[[ranges.texts]]
+text = "怎么又今天"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 2081
+end = 2125
+[[ranges.texts]]
+text = "让我歇会先"
+[[ranges.clips]]
+source = 'go10'
+start = 19237
+
+[[ranges]]
+start = 2171
+end = 2261
+[[ranges.texts]]
+text = "拼尽全力挣脱引力束缚"
+
+[[ranges]]
+start = 2261
+end = 2344
+[[ranges.texts]]
+text = "回过神来视线被胸部"
+[[ranges.clips]]
+source = 'go2'
+end = 8629
+[[ranges.clips]]
+source = 'go2'
+start = 8671
+end = 8701
+
+[[ranges]]
+start = 2350
+end = 2440
+[[ranges.texts]]
+text = "上月森徽章吸引无暇顾"
+[[ranges.clips]]
+source = 'PREV'
+volume = -50
+
+[[ranges]]
+start = 2440
+end = 2484
+[[ranges.texts]]
+text = "茶中　　　　"
+[[ranges.texts]]
+text = "　　释尝沏素"
+fontcolor = 'soyo'
+[[ranges.clips]]
+source = 'go2'
+start = 16002
+volume = -50
+
+[[ranges]]
+start = 2530
+end = 2621
+[[ranges.texts]]
+text = "我要送你日不落的想念"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 2621
+end = 2704
+[[ranges.texts]]
+text = "寄出代表love的拨片"
+[[ranges.clips]]
+source = 'go2'
+start = 17936
+[[ranges.clips]]
+source = 'go11'
+start = 21118
+end = 21142
+
+[[ranges]]
+start = 2711
+end = 2800
+[[ranges.texts]]
+text = "我要送你日不落的爱恋"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 2800
+end = 2884
+[[ranges.texts]]
+text = "弦靠着弦把音乐扫遍"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 2884
+end = 2890
+[[ranges.clips]]
+source = 'go6'
+end = 1499
+
+[[ranges]]
+start = 2890
+end = 2934
+[[ranges.texts]]
+text = "你真的没垫"
+[[ranges.clips]]
+source = 'go2'
+start = 8671
+#end = 8701
+
+[[ranges]]
+start = 2935
+end = 2979
+[[ranges.texts]]
+text = "你好美姐姐"
+[[ranges.clips]]
+source = 'go2'
+start = 8211
+volume = -50
+
+[[ranges]]
+start = 2980
+end = 3024
+[[ranges.texts]]
+text = "因我爱素颜"
+[[ranges.clips]]
+source = 'go6'
+start = 8165
+volume = -50
+
+[[ranges]]
+start = 3071
+end = 3114
+[[ranges.texts]]
+text = "你稍微收敛"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 3115
+end = 3160
+[[ranges.texts]]
+text = "你别讨我嫌"
+[[ranges.clips]]
+source = 'go11'
+end = 27189
+
+[[ranges]]
+start = 3160
+end = 3204
+[[ranges.texts]]
+text = "你不要太甜"
+[[ranges.clips]]
+source = 'go11'
+start = 30895
+#end = 30967
+volume = -50
+
+[[ranges]]
+start = 3232
+end = 3611
+[[ranges.clips]]
+source = 'go11'
+start = 30895
+end = 30925
+#end = 30967
+volume = -50
+[[ranges.clips]]
+#source = 'go11'
+#start = 21796
+source = 'NEXT'
+
+[[ranges]]
+start = 3611
+end = 3700
+[[ranges.texts]]
+text = "Waiting for the love when lost in London"
+[[ranges.clips]]
+source = 'go5'
+end = 28015
+
+[[ranges]]
+start = 3700
+end = 3784
+[[ranges.texts]]
+text = "Found it from you here back in the RING"
+[[ranges.clips]]
+source = 'go2'
+start = 8671
+end = 8701
+[[ranges.clips]]
+source = 'go2'
+start = 8701
+volume = -50
+
+
+[[ranges]]
+start = 3789
+end = 3873
+[[ranges.texts]]
+text = "All those rhythms we have played together"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 3878
+end = 3918
+[[ranges.texts]]
+text = "Treasures in memory"
+
+[[ranges]]
+start = 3918
+end = 3969
+[[ranges.clips]]
+source = 'go10'
+end = 30685
+#end = 30692
+volume = -50
+
+[[ranges]]
+start = 3969
+end = 4058
+[[ranges.texts]]
+text = "我要送你日不落的想念"
+[[ranges.clips]]
+source = 'go12'
+#start = 19161
+start = 19183
+volume = -50
+
+[[ranges]]
+start = 4058
+end = 4142
+[[ranges.texts]]
+text = "寄出代表love的拨片"
+[[ranges.clips]]
+source = 'go2'
+start = 17936
+[[ranges.clips]]
+source = 'go11'
+start = 21118
+end = 21142
+
+[[ranges]]
+start = 4148
+end = 4239
+[[ranges.texts]]
+text = "我要送你日不落的爱恋"
+[[ranges.clips]]
+source = 'go12'
+start = 22280
+end = 22352
+volume = -50
+[[ranges.clips]]
+source = 'go12'
+start = 22420
+volume = -50
+
+[[ranges]]
+start = 4239
+end = 4328
+[[ranges.texts]]
+text = "弦靠着弦把音乐扫遍"
+[[ranges.clips]]
+source = 'PREV'
+[[ranges.clips]]
+source = 'go12'
+start = 20810
+end = 20894
+volume = -50
+
+[[ranges]]
+start = 4328
+end = 4374
+[[ranges.texts]]
+text = "你好大的脸"
+[[ranges.clips]]
+source = 'go2'
+end = 26995
+volume = -50
+
+[[ranges]]
+start = 4374
+end = 4418
+[[ranges.texts]]
+text = "你好圆的脸"
+[[ranges.clips]]
+source = 'go11'
+end = 30714
+
+[[ranges]]
+start = 4419
+end = 4463
+[[ranges.texts]]
+text = "让我捏一捏"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 4463
+end = 4508
+[[ranges.clips]]
+source = 'go2'
+end = 8820
+volume = -50
+
+[[ranges]]
+start = 4508
+end = 4552
+[[ranges.texts]]
+text = "彼此的连线"
+[[ranges.clips]]
+source = 'go11'
+start = 23442
+
+[[ranges]]
+start = 4553
+end = 4597
+[[ranges.texts]]
+text = "智慧才能见"
+#[[ranges.clips]]
+#source = 'NEXT'
+
+[[ranges]]
+start = 4598
+end = 4642
+[[ranges.texts]]
+text = "定格在相片"
+[[ranges.clips]]
+source = 'go11'
+start = 23757
+
+[[ranges]]
+start = 4688
+end = 4783
+[[ranges.texts]]
+text = "我要送你日不落的想念"
+[[ranges.clips]]
+source = 'go12'
+#start = 19161
+start = 19183
+volume = -50
+
+[[ranges]]
+start = 4789
+end = 4861
+[[ranges.texts]]
+text = "ANON TOKYO 绚丽风景线"
+[[ranges.clips]]
+source = 'go11'
+start = 22104
+volume = -50
+
+[[ranges]]
+start = 4868
+end = 4958
+[[ranges.texts]]
+text = "我要送你日不落的爱恋"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 4958
+end = 5041
+[[ranges.texts]]
+text = "热情花朵开满你身边"
+[[ranges.clips]]
+source = 'go3'
+end = 1641
+volume = -50
+#[[ranges.clips]]
+#source = 'black'
+#start = 0
+
+[[ranges]]
+start = 5048
+end = 5092
+[[ranges.texts]]
+text = "奔跑不停歇"
+[[ranges.clips]]
+source = 'go10'
+start = 21696
+volume = -50
+
+[[ranges]]
+start = 5093
+end = 5137
+[[ranges.texts]]
+text = "光芒到天边"
+[[ranges.clips]]
+source = 'NEXT'
+
+[[ranges]]
+start = 5138
+end = 5182
+[[ranges.texts]]
+text = "爱意永不眠"
+[[ranges.clips]]
+source = 'go10'
+start = 22716
+volume = -50
+
+[[ranges]]
+start = 5228
+end = 5271
+[[ranges.texts]]
+text = "音符的丝线"
+[[ranges.clips]]
+source = 'go12'
+start = 11900
+volume = -50
+
+[[ranges]]
+start = 5272
+end = 5316
+[[ranges.texts]]
+text = "跳入你眼帘"
+[[ranges.clips]]
+source = 'go12'
+start = 20279
+volume = -50
+
+[[ranges]]
+start = 5316
+end = 5362
+[[ranges.texts]]
+text = "编织新一年"
+[[ranges.clips]]
+source = 'go12'
+#start = 14817
+start = 14815
+end = 14839
+[[ranges.clips]]
+source = 'go12'
+start = 14839
+volume = -50
+
+[[ranges]]
+start = 5362
+end = 5422

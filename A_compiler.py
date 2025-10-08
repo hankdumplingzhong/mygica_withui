@@ -29,7 +29,7 @@ class ScriptConfig:
     output_dir: Path = Path('cache_output')
     video_preset: list[str] = field(default_factory=lambda: ['-c:v', 'hevc_nvenc', '-cq', '18', '-pix_fmt', 'p010le'])
     video_preset_cat: list[str] = field(default_factory=lambda: ['-c:v', 'copy', '-c:a', 'copy'])
-    # video_preset_cat_recode: list[str] = field(default_factory=lambda: ['-c:v', 'libx265', '-crf', '18'])
+    video_preset_cat_recode: list[str] = field(default_factory=lambda: ['-c:v', 'hevc_nvenc', '-crf', '18', '-pix_fmt', 'p010le'])
 
     def __post_init__(self):
         assert self.MyGICA_path.suffixes[-2:] == ['.MyGICA', '.toml'], 'need .MyGICA.toml file'
@@ -46,6 +46,8 @@ class ScriptConfig:
 
         assert self.project.project_suffix in {'.mp4', '.mkv', '.mov'}, 'output file should be .mp4/.mkv/.mov'
         self.output = self.output_dir / self.MyGICA_path.with_suffix(self.project.project_suffix)
+        if hasattr(self, 'video_preset_cat_recode'):
+            self.video_preset_cat_recode = ['-r', self.project.fps] + self.video_preset_cat_recode
 
 
 # =============================
@@ -440,7 +442,6 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
             '-'
         ]
     res = subprocess_run(cmd)
-    print(f'{res=}')
     lines: list[str] = [k.strip() for k in res.stderr.splitlines()]
     j = json.loads('\n'.join(lines[lines.index('{'):lines.index('}') + 1]))
     dB = -2 - float(j['input_tp'])  # 目标响度 -2dBTP
