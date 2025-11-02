@@ -128,13 +128,20 @@ body {
 
 .console {
     margin-top: 8px;
-    height: 160px;
+    height: auto;
     overflow: auto;
     background: #050505;
     border: 1px solid #1f2937;
     border-radius: 6px;
     padding: 6px;
     font-family: ui-monospace, Consolas, monospace
+}
+
+.console{
+  flex: 0 0 200px;        /* 固定 200px，可按喜好调成 180/240 */
+  height: auto;
+  overflow: auto;         /* 多行日志内部滚动 */
+  margin-top: 8px;
 }
 
 .console .err {

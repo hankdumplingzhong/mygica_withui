@@ -223,6 +223,10 @@ def build_full():
     p = inside_root(name)
 
     cmd = BUILD_CMD_TEMPLATE.format(file=p.name)
+    env = os.environ.copy()
+    # 优先 PYTHONIOENCODING；其次全局 UTF-8 模式（3.7+）
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     # 在项目根目录下执行（便于 A_compiler 定位资源）
     proc = subprocess.Popen(
         cmd,
@@ -230,6 +234,7 @@ def build_full():
         cwd=str(ROOT_DIR),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=env,
     )
     jid = _next_job_id()
     q = queue.Queue()
