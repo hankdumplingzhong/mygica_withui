@@ -1,6 +1,6 @@
 import hashlib
 import json
-import os
+import os, shutil
 import re
 import tomllib
 from dataclasses import dataclass, field
@@ -16,6 +16,17 @@ from betterer import subprocess_run
 from structure import parse_config, Range, Text, ProjectConfig
 from time_based_cache import TimeBasedCache
 
+FFMPEG = (
+    os.environ.get("FFMPEG_BIN")                       # 环境变量优先（可在 CI/不同机器定制）
+    or shutil.which("ffmpeg")                          # PATH 里能找到就用
+    or os.path.join(os.environ["LOCALAPPDATA"],        # WinGet Links 的常见安装位
+                    "Microsoft", "WinGet", "Links", "ffmpeg.exe")
+)
+
+if not FFMPEG or not os.path.exists(FFMPEG):
+    raise FileNotFoundError(
+        "未找到 ffmpeg 可执行文件。请安装 FFmpeg 或设置环境变量 FFMPEG_BIN 指向 ffmpeg.exe"
+    )
 
 @dataclass
 class ScriptConfig:
@@ -239,7 +250,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
             # 图片 -> 视频：循环 + 精确帧数控制
             cmd = \
                 [
-                    'ffmpeg', '-y', '-hide_banner',
+                    FFMPEG, '-y', '-hide_banner',
                     '-f', 'lavfi',  # 使用 lavfi 生成静音
                     '-i', 'anullsrc',
                     '-t', str(frame_to_time(frame_count, config.project.fps)),  # 设置音频时长与视频匹配
@@ -258,7 +269,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
                 sound_path = config.project.sources[clip.sound]
                 # 如果在片段中替换音频
                 cmd = [
-                    'ffmpeg', '-y', '-hide_banner',
+                    FFMPEG, '-y', '-hide_banner',
                     '-ss', start_time,
                     '-i', src_path,
                     '-i', sound_path,  # 替换音频
@@ -268,7 +279,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
                 files = [Path(src_path), Path(sound_path)]
             else:
                 cmd = [
-                    'ffmpeg', '-y', '-hide_banner',
+                    FFMPEG, '-y', '-hide_banner',
                     '-ss', start_time,
                     '-i', src_path,
                 ]
@@ -302,7 +313,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
         pattern = get_fade_text(drawtext_filter, input_list, config, rng.end - rng.start)
         cmd = \
             [
-                'ffmpeg', '-y', '-hide_banner',
+                FFMPEG, '-y', '-hide_banner',
                 '-i', str(new_seg_file),
                 '-framerate', config.project.fps,  # 匹配视频帧率
                 '-i', pattern,  # image2 可以，但 concat 不行
@@ -325,7 +336,7 @@ def get_fade_text(drawtext_filter: str, output_list: Path, config: ScriptConfig,
         Image.fromarray(transparent).save(transparent_path)
     base_text = output_list.with_suffix('.png')
     cmd = [
-        "ffmpeg", "-y", "-hide_banner",
+        FFMPEG, "-y", "-hide_banner",
         "-i", str(transparent_path),  # 使用透明背景
         "-vf", drawtext_filter,
         '-frames:v', '1',
@@ -399,7 +410,7 @@ def cat_video(output: Path, segment_files: list[Path], config: ScriptConfig, par
     print(f"🎥 拼接 {len(segment_files)} 个片段 → {output}")
     cmd = \
         [
-            'ffmpeg', '-y', '-hide_banner',
+            FFMPEG, '-y', '-hide_banner',
             '-f', 'concat',
             '-i', str(concat_file),
         ] + param + [
@@ -416,7 +427,7 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 
     audio_path = output_path.with_suffix('.aac')
     cmd = [
-        'ffmpeg', '-y', '-hide_banner',
+        FFMPEG, '-y', '-hide_banner',
         '-i', str(input_path),
         '-i', str(bgm),
         '-filter_complex',
@@ -435,7 +446,7 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 
     cmd = \
         [
-            'ffmpeg', '-hide_banner',
+            FFMPEG, '-hide_banner',
             '-i', audio_path,
             '-af', 'loudnorm=print_format=json',
             '-f', 'null',
@@ -448,7 +459,7 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 
     cmd = \
         [
-            'ffmpeg', '-y', '-hide_banner',
+            FFMPEG, '-y', '-hide_banner',
             '-i', str(input_path),
             '-i', str(audio_path),
             '-filter_complex',

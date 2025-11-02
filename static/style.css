@@ -1,0 +1,168 @@
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial
+}
+
+.topbar {
+    height: 52px;
+    background: #111;
+    color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 12px;
+    position: sticky;
+    top: 0
+}
+
+.topbar .hint {
+    opacity: .7;
+    margin-left: 6px
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px
+}
+
+.pane {
+    background: #0b0b0b;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 70vh;
+    color: #ddd
+}
+
+.editor {
+    width: 100%;
+    height: 65vh;
+    border: 1px solid #222;
+    border-radius: 6px
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px
+}
+
+.tab {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer
+}
+
+.tab.active {
+    background: #234;
+    border-color: #456;
+    color: #eef
+}
+
+.tabpane {
+    display: none
+}
+
+.tabpane.active {
+    display: block
+}
+
+.kv {
+    background: #0d0d0d;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 8px;
+    white-space: pre-wrap
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 150px;
+    overflow: auto
+}
+
+.row {
+    background: #121212;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 6px
+}
+
+.badge {
+    display: inline-block;
+    background: #334155;
+    color: #e5e7eb;
+    border-radius: 10px;
+    padding: 0 6px;
+    margin-right: 6px
+}
+
+.console {
+    margin-top: 8px;
+    height: 160px;
+    overflow: auto;
+    background: #050505;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    padding: 6px;
+    font-family: ui-monospace, Consolas, monospace
+}
+
+.console .err {
+    color: #fca5a5
+}
+
+.outputs {
+    margin-top: 10px
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px
+}
+
+.card {
+    background: #101010;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 8px
+}
+
+.card .meta {
+    margin-bottom: 6px;
+    color: #9ca3af
+}
+
+.card video {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid #222
+}
+
+button,
+select {
+    background: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer
+}
+
+button:hover {
+    filter: brightness(1.1)
+}

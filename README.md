@@ -195,3 +195,11 @@ cache_dir/
 ---
 
 > 🎬 MyGICA —— 让视频剪辑变得简单又自动化！（并不能）
+
+## MyGICA 本地 Web UI（施工中） by Hank
+为方便编辑 *.MyGICA.toml 并可视化时间线/输出结果，项目提供一个本地网页 UI。目前，默认只操作项目根目录下的 TOML 文件。
+
+## 要求
+- Python ≥ 3.10（推荐 3.11+）
+- 依赖：`flask` 、`watchdog`
+
