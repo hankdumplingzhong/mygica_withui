@@ -8,7 +8,6 @@ project_suffix = '.mp4'
 # =====================================
 # 源文件定义
 # =====================================
-# save
 
 [sources]
 go1  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 01 (BS4 1280x720 x264 AAC).mp4"

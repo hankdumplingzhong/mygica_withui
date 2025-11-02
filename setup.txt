@@ -1,9 +1,6 @@
-.\ffmpeg.cmd -hide_banner -version
 
+python -m uv sync
+ffmpeg -hide_banner -version
 python -m uv run A_compiler.py
-
-flask
-watchdog
-tomli
 
 python ui_server.py --root .
