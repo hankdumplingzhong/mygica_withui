@@ -5,28 +5,24 @@ project_suffix = '.mp4'
 # 使用自动推测
 #start = 1907
 #end = 2098
-# test save
-
 # =====================================
 # 源文件定义
 # =====================================
 
 [sources]
-go1  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 01 (BS4 1280x720 x264 AAC).mp4"
-go2  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 02 (BS4 1280x720 x264 AAC).mp4"
-go3  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 03 (BS4 1280x720 x264 AAC).mp4"
-go4  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 04 (AT-X 1280x720 x264 AAC).mp4"
-go5  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 05 (AT-X 1280x720 x264 AAC).mp4"
-go6  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 06 (AT-X 1280x720 x264 AAC).mp4"
-go7  = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 07 (AT-X 1280x720 x264 AAC).mp4"
-
-go8  = "E:/mygo/[LPSub] BanG Dream! It's MyGO!!!!! [08][HEVC AAC][1080p][JPSC&JPTC].mkv"
-go9  = "E:/mygo/[LPSub] BanG Dream! It's MyGO!!!!! [09][HEVC AAC][1080p][JPSC&JPTC].mkv"
-go10 = "E:/mygo/[LPSub] BanG Dream! It's MyGO!!!!! [10][HEVC AAC][1080p][JPSC&JPTC].mkv"
-go11 = "E:/mygo/[LPSub] BanG Dream! It's MyGO!!!!! [11][HEVC AAC][1080p][JPSC&JPTC].mkv"
-go12 = "E:/mygo/[LPSub] BanG Dream! It's MyGO!!!!! [12][HEVC AAC][1080p][JPSC&JPTC].mkv"
-
-go13 = "E:/mygo/[Ohys-Raws] Bang Dream! It`s MyGo!!!!! - 13 (AT-X 1280x720 x264 AAC).mp4"
+go1  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 01 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go2  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 02 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go3  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 03 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go4  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 04 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go5  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 05 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go6  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 06 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go7  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 07 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go8  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 08 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go9  = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 09 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go10 = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 10 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go11 = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 11 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go12 = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 12 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
+go13 = "E:/mygo/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! [01-13][WebRip 1080p HEVC-10bit AAC]/[Nekomoe kissaten&LoliHouse] BanG Dream! It’s MyGO!!!!! - 13 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"
 
 ji1  = "E:/Mujica/BanG.Dream!.Ave.Mujica.S01E01.1080p.UNEXT.WEB-DL.JPN.AAC2.0.H.264-ToonsHub.mkv"
 ji2  = "E:/Mujica/BanG.Dream!.Ave.Mujica.S01E02.1080p.UNEXT.WEB-DL.JPN.AAC2.0.H.264-ToonsHub.mkv"

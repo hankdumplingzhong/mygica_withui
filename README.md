@@ -203,3 +203,61 @@ cache_dir/
 - Python ≥ 3.10（推荐 3.11+）
 - 依赖：`flask` 、`watchdog`
 
+## 目前结构
+```
+/Root
+  ├─ A_compiler.py
+  ├─ structure.py
+  ├─ time_based_cache.py
+  ├─ ui_server.py
+  ├─ templates/
+  │   └─ index.html
+  └─ static/
+      ├─ app.js
+      └─ style.css
+```
+
+## 启动服务
+> python ui_server.py --root .
+
+默认端口5173。启动确认后，打开http://locahost:5173
+
+## 使用流程
+
+- 右上选择根目录中的 TOML → 点击「加载」。（已测试通过）
+- 左侧 Monaco 编辑器修改 → 「保存」。（已测试通过）
+- 点「校验」查看解析后的 Project / Sources / Colors，以及 Ranges 列表与底部时间线。（未测试）
+- 点「全量构建」，底部控制台实时显示日志；完成后 最近输出 中出现视频卡片，可直接播放。（已测试通过）
+
+## 支持的 TOML 写法（fps 与后缀）
+- 顶层 fps（支持分数字符串）：
+```
+fps = "24000/1001"      # 或 fps = 23.976 / fps = 30
+project_suffix = ".mp4" # 等价于 suffix
+```
+
+- [project] 节点：
+```
+[project]
+fps = 30
+start = 0
+suffix = ".mp4"
+```
+
+## 页面区域
+
+- 顶部：选择 TOML、加载、保存、校验、全量构建
+- 左侧：TOML 编辑器（Monaco）
+- 右侧：Tabs — Ranges（列表 + 时间线）/ Project / Sources / Colors
+- 底部：控制台（SSE 实时日志）与最近输出（cache_output/ 视频预览）
+
+## 路由一览
+
+- `GET /`：主页
+- `GET /project/list`：列出根目录下的 TOML
+- `GET /project/load?file=...`：读取文件内容
+- `POST /project/save?file=...`：保存（解析仅提示，不阻塞保存）
+- `POST /project/parse`：TOML → 轻量模型（含 fps_raw/fps_float）
+- `POST /build/full`：触发构建，返回 job_id
+- `GET /logs/stream?job_id=...`：SSE 日志流（stdout/stderr + done 事件）
+- `GET /outputs、GET /outputs/<fname>`：列出/播放 cache_output/ 产物

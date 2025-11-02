@@ -1,6 +1,6 @@
 import hashlib
 import json
-import os, shutil
+import os
 import re
 import tomllib
 from dataclasses import dataclass, field
@@ -16,17 +16,6 @@ from betterer import subprocess_run
 from structure import parse_config, Range, Text, ProjectConfig
 from time_based_cache import TimeBasedCache
 
-FFMPEG = (
-    os.environ.get("FFMPEG_BIN")                       # 环境变量优先（可在 CI/不同机器定制）
-    or shutil.which("ffmpeg")                          # PATH 里能找到就用
-    or os.path.join(os.environ["LOCALAPPDATA"],        # WinGet Links 的常见安装位
-                    "Microsoft", "WinGet", "Links", "ffmpeg.exe")
-)
-
-if not FFMPEG or not os.path.exists(FFMPEG):
-    raise FileNotFoundError(
-        "未找到 ffmpeg 可执行文件。请安装 FFmpeg 或设置环境变量 FFMPEG_BIN 指向 ffmpeg.exe"
-    )
 
 @dataclass
 class ScriptConfig:
@@ -38,10 +27,18 @@ class ScriptConfig:
     video_height: int = 1080
     tmpdir: Path = Path('cache_dir')
     output_dir: Path = Path('cache_output')
-    video_preset: list[str] = field(default_factory=lambda: ['-c:v', 'hevc_nvenc', '-cq', '18', '-pix_fmt', 'p010le'])
+    video_preset: list[str] = field(default_factory=lambda: [
+        '-c:v', 'hevc_nvenc',
+        '-cq', '18',
+        '-g', '240',                 # 统一 GOP
+        '-bf', '3',
+        '-b_ref_mode', 'middle',
+        '-forced-idr', '1',          # 每个关键点强制 IDR
+        '-pix_fmt', 'p010le'
+    ])
     video_preset_cat: list[str] = field(default_factory=lambda: ['-c:v', 'copy', '-c:a', 'copy'])
     video_preset_cat_recode: list[str] = field(default_factory=lambda: ['-c:v', 'hevc_nvenc', '-crf', '18', '-pix_fmt', 'p010le'])
-
+    
     def __post_init__(self):
         assert self.MyGICA_path.suffixes[-2:] == ['.MyGICA', '.toml'], 'need .MyGICA.toml file'
         assert self.MyGICA_path.exists(), '.MyGICA.toml file should exists'
@@ -58,7 +55,8 @@ class ScriptConfig:
         assert self.project.project_suffix in {'.mp4', '.mkv', '.mov'}, 'output file should be .mp4/.mkv/.mov'
         self.output = self.output_dir / self.MyGICA_path.with_suffix(self.project.project_suffix)
         if hasattr(self, 'video_preset_cat_recode'):
-            self.video_preset_cat_recode = ['-r', self.project.fps] + self.video_preset_cat_recode
+            self.video_preset_cat_recode = ['-r', str(self.project.fps), '-vsync', 'cfr'] + self.video_preset_cat_recode
+
 
 
 # =============================
@@ -205,7 +203,7 @@ def work(config: ScriptConfig) -> None:
     # 拼接所有片段
     # =============================
     no_bgm = config.output.with_stem(config.output.stem + '_no_bgm')
-    cat_video(no_bgm, segment_files, config, config.video_preset_cat)
+    cat_video(no_bgm, segment_files, config, config.video_preset_cat_recode)
 
     # =============================
     # 拼接完成后添加背景音乐 / 在片段中添加背景音乐跳过此处
@@ -250,7 +248,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
             # 图片 -> 视频：循环 + 精确帧数控制
             cmd = \
                 [
-                    FFMPEG, '-y', '-hide_banner',
+                    'ffmpeg', '-y', '-hide_banner',
                     '-f', 'lavfi',  # 使用 lavfi 生成静音
                     '-i', 'anullsrc',
                     '-t', str(frame_to_time(frame_count, config.project.fps)),  # 设置音频时长与视频匹配
@@ -258,6 +256,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
                     '-i', str(src_path),
                     '-vframes', str(frame_count),  # 精确控制帧数
                     '-r', str(config.project.fps),  # 设置帧率
+                    '-vsync', 'cfr',
                     '-vf', base_filter,  # 合并所有滤镜
                     '-pix_fmt', 'yuv420p10le',
                 ] + config.video_preset + [str(clip_file)]
@@ -269,7 +268,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
                 sound_path = config.project.sources[clip.sound]
                 # 如果在片段中替换音频
                 cmd = [
-                    FFMPEG, '-y', '-hide_banner',
+                    'ffmpeg', '-y', '-hide_banner',
                     '-ss', start_time,
                     '-i', src_path,
                     '-i', sound_path,  # 替换音频
@@ -279,7 +278,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
                 files = [Path(src_path), Path(sound_path)]
             else:
                 cmd = [
-                    FFMPEG, '-y', '-hide_banner',
+                    'ffmpeg', '-y', '-hide_banner',
                     '-ss', start_time,
                     '-i', src_path,
                 ]
@@ -290,6 +289,8 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
                 '-b:a', '128k',
                 '-ar', '44100',  # 统一采样率
                 '-ac', '2',  # 统一声道数
+                '-r', str(config.project.fps),  # 统一帧率   ← 新增
+                '-vsync', 'cfr',                # 固定帧时基 ← 新增
             ])
             cmd.extend(af + config.video_preset + [str(clip_file)])
 
@@ -313,7 +314,7 @@ def work_clips(config: ScriptConfig, rng: Range, seg_file: Path) -> Path:
         pattern = get_fade_text(drawtext_filter, input_list, config, rng.end - rng.start)
         cmd = \
             [
-                FFMPEG, '-y', '-hide_banner',
+                'ffmpeg', '-y', '-hide_banner',
                 '-i', str(new_seg_file),
                 '-framerate', config.project.fps,  # 匹配视频帧率
                 '-i', pattern,  # image2 可以，但 concat 不行
@@ -336,7 +337,7 @@ def get_fade_text(drawtext_filter: str, output_list: Path, config: ScriptConfig,
         Image.fromarray(transparent).save(transparent_path)
     base_text = output_list.with_suffix('.png')
     cmd = [
-        FFMPEG, "-y", "-hide_banner",
+        "ffmpeg", "-y", "-hide_banner",
         "-i", str(transparent_path),  # 使用透明背景
         "-vf", drawtext_filter,
         '-frames:v', '1',
@@ -410,7 +411,8 @@ def cat_video(output: Path, segment_files: list[Path], config: ScriptConfig, par
     print(f"🎥 拼接 {len(segment_files)} 个片段 → {output}")
     cmd = \
         [
-            FFMPEG, '-y', '-hide_banner',
+            'ffmpeg', '-y', '-hide_banner',
+            '-fflags', '+genpts',
             '-f', 'concat',
             '-i', str(concat_file),
         ] + param + [
@@ -427,7 +429,7 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 
     audio_path = output_path.with_suffix('.aac')
     cmd = [
-        FFMPEG, '-y', '-hide_banner',
+        'ffmpeg', '-y', '-hide_banner',
         '-i', str(input_path),
         '-i', str(bgm),
         '-filter_complex',
@@ -446,7 +448,7 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 
     cmd = \
         [
-            FFMPEG, '-hide_banner',
+            'ffmpeg', '-hide_banner',
             '-i', audio_path,
             '-af', 'loudnorm=print_format=json',
             '-f', 'null',
@@ -459,7 +461,7 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 
     cmd = \
         [
-            FFMPEG, '-y', '-hide_banner',
+            'ffmpeg', '-y', '-hide_banner',
             '-i', str(input_path),
             '-i', str(audio_path),
             '-filter_complex',
@@ -478,11 +480,47 @@ def add_bgm(bgm: Path, audio_advance_sec: float, input_path: Path, output_path: 
 # =============================
 # 启动
 # =============================
+def _normalize_mygica_path(p: Path) -> Path:
+    """把用户传入的路径归一化为 *.MyGICA.toml"""
+    name = p.name
+    # 已经是 *.MyGICA.toml
+    if name.lower().endswith(".mygica.toml"):
+        return p
+    # *.toml => 插入 .MyGICA
+    if p.suffix.lower() == ".toml":
+        return p.with_name(p.stem + ".MyGICA.toml")
+    # 只有基名/无后缀 => 补成 *.MyGICA.toml
+    if not p.suffix:
+        return p.with_name(p.name + ".MyGICA.toml")
+    return p
+
 def main() -> None:
-    MyGICA_path = Path('示例.MyGICA.toml')  # noqa: N806
+    import argparse, sys
+    parser = argparse.ArgumentParser(
+        description="Compile a MyGICA project from a .MyGICA.toml file"
+    )
+    # 位置参数
+    parser.add_argument("toml", nargs="?", default=None,
+                        help="Path or basename of the *.MyGICA.toml file")
+    # 选项参数（兼容多写法）
+    parser.add_argument("-c", "--config", "--file", dest="config", default=None,
+                        help="Path or basename of the *.MyGICA.toml file")
+
+    # 容忍未知参数，避免后端多传 flag 时直接报错
+    args, unknown = parser.parse_known_args()
+    chosen = args.config or args.toml or "示例.MyGICA.toml"
+
+    # 规范化成 *.MyGICA.toml
+    MyGICA_path = _normalize_mygica_path(Path(chosen))  # noqa: N806
+
+    if unknown:
+        try:
+            print(f"[info] ignoring extra args from caller: {unknown}")
+        except Exception:
+            pass
+
     config = ScriptConfig(MyGICA_path=MyGICA_path)
     work(config)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,4 +1,7 @@
-import os, sys, re, json, queue, threading, argparse, subprocess, pathlib, time
+import os, sys, re, json, queue, threading, argparse, subprocess, pathlib, time, json
+import tomllib
+from pathlib import Path
+from typing import Dict, Set, Tuple
 from datetime import datetime
 from flask import (
     Flask,
@@ -9,6 +12,8 @@ from flask import (
     Response,
     abort,
 )
+from loguru import logger
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -16,7 +21,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 # 配置与安全（仅限 ROOT 内）
 # -----------------------
 ROOT_DIR: pathlib.Path
-ALLOWED_PATTERNS = re.compile(r"^([\w\- .()\[\]]+)$")  # 简单文件名白名单（根目录内）
+ALLOWED_PATTERNS = re.compile(r"^[^\x00-\x1F/\\:]+$")   # 简单文件名白名单（根目录内）
 BUILD_CMD_TEMPLATE = os.environ.get(
     "MYGICA_BUILD", f"{sys.executable} A_compiler.py --config {{file}}"
 )
@@ -26,27 +31,54 @@ JOBS = {}
 JOB_ID_COUNTER = 0
 JOBS_LOCK = threading.Lock()
 
+CACHE_DIR_NAME = "cache_dir"
+OUTPUT_DIR_NAME = "cache_output"
+UPLOAD_DIR_NAME = "user_uploads"
+VIS_SOURCE_JSON = "vis_source.json"
 
-def inside_root(name: str) -> pathlib.Path:
-    """限制访问：仅允许根目录下的普通文件名，不允许子目录/.. 跳转。"""
-    if not ALLOWED_PATTERNS.match(name or ""):
-        abort(400, description="Illegal filename.")
-    p = ROOT_DIR / name
-    # 只允许在根目录下且是文件
-    if not p.exists() or not p.is_file():
-        abort(404, description="File not found in project root.")
-    # 再确保没有越权
-    try:
-        p.resolve().relative_to(ROOT_DIR.resolve())
-    except Exception:
-        abort(403, description="Out of root.")
+UPLOAD_URL_PREFIXES = ["/media/", "/uploads/"]
+
+# === 基础路径（基于全局变量） ===
+ROOT_DIR = Path(".").resolve()
+CACHE_DIR = ROOT_DIR / CACHE_DIR_NAME
+UPLOAD_DIR = ROOT_DIR / UPLOAD_DIR_NAME
+VIS_JSON_PATH = ROOT_DIR / VIS_SOURCE_JSON
+
+FRAMES_ROOT = CACHE_DIR / "frames"  # 统一放帧相关记录文件
+FRAMES_ROOT.mkdir(parents=True, exist_ok=True)
+
+def get_upload_dir():
+    """上传目录"""
+    p = (ROOT_DIR / UPLOAD_DIR_NAME).resolve()
+    p.mkdir(exist_ok=True)
     return p
 
+def _inside_root(name: str) -> Path:
+    """校验文件名并返回路径"""
+    if not name or any(c in name for c in ("/", "\\")) or not ALLOWED_PATTERNS.match(name):
+        abort(400, description="非法文件名")
+    p = (ROOT_DIR / name).resolve()
+    if not p.exists() or not p.is_file():
+        abort(404, description="未找到目标文件")
+    if ROOT_DIR.resolve() not in p.parents and p != ROOT_DIR.resolve():
+        abort(403, description="越界访问")
+    return p
+
+def _abs(p: Path) -> Path:
+    """绝对化路径"""
+    return p.resolve(strict=False)
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("home.html")
 
+@app.get("/editor")
+def editor():
+    return render_template("editor.html")
+
+@app.get("/visedit")
+def visedit():
+    return render_template("visedit.html")
 
 @app.get("/project/list")
 def project_list():
@@ -65,23 +97,22 @@ def project_list():
 
 
 @app.get("/project/load")
-def project_load():
-    name = request.args.get("file", "").strip()
-    p = inside_root(name)
-    text = p.read_text(encoding="utf-8")
+def project_load() -> Response:
+    name: str = request.args.get("file", "").strip()
+    p: Path = _inside_root(name)
+    text: str = p.read_text(encoding="utf-8")
     return jsonify({"text": text})
 
 
 @app.post("/project/save")
-def project_save():
-    data = request.get_json(force=True)
-    name = request.args.get("file", "").strip()
-    text = data.get("text", "")
-    # 保存时不再强制阻塞；解析仅用于返回提示
-    ok, errors, model = parse_toml_safe(text)
-    p = inside_root(name)
+def project_save() -> Response:
+    data: dict = request.get_json(force=True)
+    name: str = request.args.get("file", "").strip()
+    text: str = data.get("text", "")
+    ok, warnings, model = parse_toml_safe(text)
+    p: Path = _inside_root(name)
     p.write_text(text, encoding="utf-8")
-    return jsonify({"ok": True, "parsed": ok, "errors": errors})
+    return jsonify({"ok": True, "parsed": ok, "errors": warnings})
 
 
 @app.post("/project/parse")
@@ -91,13 +122,75 @@ def project_parse():
     ok, errors, model = parse_toml_safe(text)
     return jsonify({"ok": ok, "errors": errors, "model": model})
 
+# --- 可视化编辑器的素材映射存取 ---
+@app.get("/vis/sources")
+def vis_sources_get():
+    p = ROOT_DIR / "vis_sources.json"
+    items = {}
+    if p.exists():
+        try:
+            items = json.loads(p.read_text("utf-8"))
+            if not isinstance(items, dict):
+                items = {}
+        except Exception:
+            items = {}
+    return jsonify({"items": items})
 
-# --- 解析 TOML（宽容：支持顶层 fps / 分数字符串 / 别名字段） ---
-try:
-    import tomllib  # Python 3.11+
-except Exception:
-    import tomli as tomllib
+@app.post("/vis/sources")
+def vis_sources_post():
+    data = request.get_json(force=True)
+    items = data.get("items", {})
+    if not isinstance(items, dict):
+        abort(400, description="items must be an object")
+    p = ROOT_DIR / "vis_sources.json"
+    p.write_text(json.dumps(items, ensure_ascii=False, indent=2), "utf-8")
+    return jsonify({"ok": True})
 
+# --- 可视化编辑器的素材映射存取 ---
+@app.post("/vis/upload")
+def vis_upload():
+    """接收单个视频/音频文件并返回可访问URL；并回写 vis_sources.json。"""
+    if "file" not in request.files:
+        abort(400, description="no file")
+    f = request.files["file"]
+    key = request.form.get("key", "").strip()
+    if not f or not f.filename:
+        abort(400, description="empty file")
+    if not key:
+        abort(400, description="missing key")
+
+    ext = os.path.splitext(f.filename)[1]
+    fname = secure_filename(f"{int(time.time()*1000)}_{os.getpid()}" + ext)
+    save_path = get_upload_dir() / fname
+    f.save(save_path)
+
+    url = f"/uploads/{fname}"
+
+    # 更新 vis_sources.json（兼容老格式 -> 升级为 {path,url}）
+    p = ROOT_DIR / "vis_sources.json"
+    items = {}
+    if p.exists():
+        try:
+            raw = json.loads(p.read_text("utf-8"))
+            if isinstance(raw, dict):
+                items = raw
+        except Exception:
+            items = {}
+
+    old = items.get(key)
+    if isinstance(old, str):
+        old = {"path": old}
+    if not isinstance(old, dict):
+        old = {}
+    old.update({"path": str(save_path), "url": url})
+    items[key] = old
+
+    p.write_text(json.dumps(items, ensure_ascii=False, indent=2), "utf-8")
+    return jsonify({"ok": True, "key": key, "url": url, "path": str(save_path)})
+
+@app.get("/uploads/<path:fname>")
+def serve_uploads(fname):
+    return send_from_directory(get_upload_dir(), fname, conditional=True)
 
 def parse_fps(value):
     """把 fps 解析成 float。支持数字、'23.976'、'24000/1001' 这类分数。失败返回 None。"""
@@ -220,9 +313,13 @@ def _reader_thread(proc, q: queue.Queue):
 def build_full():
     data = request.get_json(force=True)
     name = (data.get("file") or "").strip()
-    p = inside_root(name)
+    p = _inside_root(name)
 
     cmd = BUILD_CMD_TEMPLATE.format(file=p.name)
+    env = os.environ.copy()
+    # 优先 PYTHONIOENCODING；其次全局 UTF-8 模式（3.7+）
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     # 在项目根目录下执行（便于 A_compiler 定位资源）
     proc = subprocess.Popen(
         cmd,
@@ -230,6 +327,7 @@ def build_full():
         cwd=str(ROOT_DIR),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=env,
     )
     jid = _next_job_id()
     q = queue.Queue()
@@ -295,15 +393,326 @@ def outputs_list():
 
 
 @app.get("/outputs/<path:fname>")
-def outputs_get(fname):
-    # 只允许从 cache_output 取文件
-    base = ROOT_DIR / "cache_output"
-    try:
-        (base / fname).resolve().relative_to(base.resolve())
-    except Exception:
+def outputs_get(fname: str):
+    base: Path = ROOT_DIR / OUTPUT_DIR_NAME
+    target: Path = (base / fname).resolve()
+    if base.resolve() not in target.parents and target != base.resolve():
         abort(403)
     return send_from_directory(base, fname, as_attachment=False)
 
+def _load_vis_sources() -> dict:
+    """载入 vis_source.json；失败返回空对象。"""
+    if not VIS_JSON_PATH.exists():
+        logger.warning("VIS source json not found: {}", VIS_JSON_PATH)
+        return {}
+    try:
+        return json.loads(VIS_JSON_PATH.read_text("utf-8"))
+    except Exception as e:
+        logger.error("Failed to parse {}: {}", VIS_JSON_PATH, e)
+        return {}
+
+def _resolve_media_path(item: dict) -> Path | None:
+    """
+    将 vis_source.json 中的记录映射到物理文件路径。
+    - 若 url 以 UPLOAD_URL_PREFIXES 开头，则映射到 UPLOAD_DIR/<basename>
+    - 否则使用 path；相对路径按 ROOT_DIR 解析
+    """
+    url = (item.get("url") or "").strip()
+    path = (item.get("path") or "").strip()
+
+    # 命中上传前缀：落到 user_uploads
+    for pref in UPLOAD_URL_PREFIXES:
+        if url.startswith(pref):
+            basename = url.split("/")[-1]
+            p = (UPLOAD_DIR / basename).resolve()
+            if p.exists():
+                return p
+            logger.warning("URL mapped file not found: {} -> {}", url, p)
+            break  # 命中过前缀但没有文件，跳出前缀循环，回退用 path
+
+    if path:
+        p = Path(path)
+        if not p.is_absolute():
+            p = (ROOT_DIR / p).resolve()
+        if p.exists():
+            return p
+        logger.warning("Path in VIS not found: {}", p)
+
+    return None
+
+
+def _probe_fps(media_path: Path) -> float:
+    """优先 avg_frame_rate，其次 r_frame_rate；失败回退 30fps。"""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=avg_frame_rate,r_frame_rate",
+        "-of", "default=nw=1:nk=1", str(media_path),
+    ]
+    try:
+        out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip().splitlines()
+        for line in out:
+            if "/" in line:
+                num_s, den_s = line.split("/", 1)
+                try:
+                    num = float(num_s)
+                    den = float(den_s)
+                    if den != 0.0:
+                        fps = num / den
+                        if 5.0 <= fps <= 120.0:
+                            return fps
+                except Exception:
+                    # 忽略非数值行
+                    pass
+    except subprocess.CalledProcessError as e:
+        logger.error("ffprobe failed on {}: {}", media_path, e)
+
+    logger.warning("Fallback fps=30 for {}", media_path)
+    return 30.0
+
+
+def _key_dir(key: str) -> Path:
+    d = FRAMES_ROOT / key
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _read_records_any(key: str) -> list:
+    """
+    读取已记录帧号：
+    - 优先读 records.json（格式如 [12, 240, 835]）
+    - 若不存在则尝试 index.json 推断：
+        * {"frame":123} 或 {"file":"000123.jpg"} 或 {"t":123}
+    """
+    kdir = _key_dir(key)
+    rec = kdir / "records.json"
+    if rec.exists():
+        try:
+            arr = json.loads(rec.read_text("utf-8"))
+            # 保障都是 int
+            return sorted({int(v) for v in arr})
+        except Exception as e:
+            logger.error("Failed to parse records.json for {}: {}", key, e)
+
+    idx = kdir / "index.json"
+    frames = []
+    if idx.exists():
+        try:
+            data = json.loads(idx.read_text("utf-8"))
+            for it in data:
+                if "frame" in it:
+                    frames.append(int(it["frame"]))
+                elif "file" in it:
+                    stem = str(it["file"]).split(".", 1)[0]
+                    if stem.isdigit():
+                        frames.append(int(stem))
+                elif "t" in it:
+                    frames.append(int(it["t"]))
+        except Exception as e:
+            logger.error("Failed to parse index.json for {}: {}", key, e)
+    return sorted(set(frames))
+
+def _collect_referenced_paths(root: Path) -> Set[Path]:
+    """
+    收集 vis_source.json 中的被引用本地文件，统一转为绝对路径。
+    支持两种结构：
+      "key": "path_or_url"
+      "key": {"path": "...", "url": "..."}
+    URL 允许以 /media/ 或 /uploads/ 开头，映射到 user_uploads/ 下对应相对路径。
+    """
+    data = _load_vis_sources(root)
+    refs: Set[Path] = set()
+    upload_dir = _abs(root / UPLOAD_DIR_NAME)
+
+    def push_path_like(s: str):
+        s = (s or "").strip()
+        if not s:
+            return
+        # 远程 URL 跳过
+        if s.startswith("http://") or s.startswith("https://"):
+            return
+        # 以已知前缀的站内 URL => 映射到 user_uploads/
+        for prefix in UPLOAD_URL_PREFIXES:
+            if s.startswith(prefix):
+                rel = s.split(prefix, 1)[1]
+                refs.add(_abs(upload_dir / rel))
+                return
+        # 其他：按文件路径解析（支持相对/绝对，Windows 反斜杠都可）
+        p = Path(s)
+        if not p.is_absolute():
+            p = root / p
+        refs.add(_abs(p))
+
+    if isinstance(data, dict):
+        for _, v in data.items():
+            if isinstance(v, str):
+                push_path_like(v)
+            elif isinstance(v, dict):
+                # 优先 path，其次 url
+                if "path" in v and v["path"]:
+                    push_path_like(v["path"])
+                if "url" in v and v["url"]:
+                    push_path_like(v["url"])
+
+    return refs
+
+def _scan_targets(root: Path) -> Tuple[Path, Path, Set[Path], Set[Path]]:
+    cache_dir = root / CACHE_DIR_NAME
+    upload_dir = root / UPLOAD_DIR_NAME
+    ref_paths = _collect_referenced_paths(root)
+    return cache_dir, upload_dir, ref_paths, set()
+
+def _list_cache_to_delete(cache_dir: Path) -> Set[Path]:
+    to_del = set()
+    if cache_dir.exists():
+        for p in cache_dir.rglob("*"):
+            if p.is_file():
+                if p.name in (".gitkeep",) or p.name.startswith("."):
+                    continue
+                to_del.add(_abs(p))
+    return to_del
+
+@app.get("/frames/bookmarks")
+def frames_bookmarks():
+    """
+    返回指定 key 的帧号表与 fps、times（秒）。
+    params:
+      - key: vis_source.json 的键名（如 go1）
+    response:
+      { "key": str, "fps": float, "count": int, "frames": [int], "times": [float] }
+    """
+    key = (request.args.get("key") or "").strip()
+    if not key:
+        return abort(400, "missing key")
+
+    sources = _load_vis_sources()
+    info = sources.get(key)
+    if not info:
+        return abort(404, f"key not found in {VIS_SOURCE_JSON}: {key}")
+
+    media = _resolve_media_path(info)
+    if not media:
+        return abort(404, f"media not found for key={key}")
+
+    fps = _probe_fps(media)
+    frames = _read_records_any(key)
+    times = [round(f / fps, 3) for f in frames]
+
+    logger.info("bookmarks key={} fps={} count={}", key, fps, len(frames))
+    return jsonify({
+        "key": key,
+        "fps": round(fps, 6),
+        "count": len(frames),
+        "frames": frames,
+        "times": times,
+    })
+
+# 清理用
+def _list_orphan_uploads(upload_dir: Path, ref_paths: Set[Path], root: Path) -> Set[Path]:
+    """在严格绝对路径比对之外，增加一个“文件名兜底”以避免误删。"""
+    orphans = set()
+    if not upload_dir.exists():
+        return orphans
+
+    # 兜底集合：已引用的文件名（大小写不敏感，兼容 Windows）
+    ref_basenames = {p.name.lower() for p in ref_paths}
+
+    for p in upload_dir.rglob("*"):
+        if not p.is_file():
+            continue
+        ap = _abs(p)
+        # 严格：绝对路径命中
+        if ap in ref_paths:
+            continue
+        # 兜底：同名即保留（避免 URL 与 path 指向同一文件却写法不同）
+        if ap.name.lower() in ref_basenames:
+            continue
+        orphans.add(ap)
+    return orphans
+
+def _delete_files(files: Set[Path], min_age_seconds: int = 600) -> int:
+    now = time.time()
+    cnt = 0
+    for f in sorted(files, key=lambda x: len(str(x)), reverse=True):
+        try:
+            if f.is_file():
+                # 过新就跳过
+                if now - f.stat().st_mtime < min_age_seconds:
+                    continue
+                f.unlink(missing_ok=True)
+                cnt += 1
+        except Exception as e:
+            print(f"[cleanup] fail to delete file {f}: {e}")
+    return cnt
+
+def _delete_empty_dirs(root: Path) -> int:
+    """从深到浅删除空目录（只影响 cache_dir/user_uploads 下的空目录）。"""
+    removed = 0
+    for top in [root / CACHE_DIR_NAME, root / UPLOAD_DIR_NAME]:
+        if not top.exists():
+            continue
+        # 深度优先：先删除深层空目录
+        for d in sorted([p for p in top.rglob("*") if p.is_dir()], key=lambda x: len(str(x)), reverse=True):
+            try:
+                # 只删完全空目录
+                next(iter(d.iterdir()))
+            except StopIteration:
+                try:
+                    d.rmdir()
+                    removed += 1
+                except Exception:
+                    pass
+    return removed
+
+@app.get("/maintenance/preview_cleanup")
+def preview_cleanup():
+    root = Path(globals().get("ROOT_DIR", Path.cwd()))
+    cache_dir, upload_dir, ref_paths, _ = _scan_targets(root)
+    cache_files = _list_cache_to_delete(cache_dir)
+    upload_orphans = _list_orphan_uploads(upload_dir, ref_paths, root)
+    return jsonify({
+        "root": str(root),
+        "cache_dir": str(cache_dir),
+        "upload_dir": str(upload_dir),
+        "referenced_count": len(ref_paths),
+        "delete_candidates": {
+            "cache_files": [str(p) for p in sorted(cache_files)],
+            "upload_orphans": [str(p) for p in sorted(upload_orphans)],
+        },
+        "tips": "POST /maintenance/cleanup 执行清理；传 {\"dry_run\": true} 可做一次干跑"
+    })
+
+@app.post("/maintenance/cleanup")
+def do_cleanup():
+    root = Path(globals().get("ROOT_DIR", Path.cwd()))
+    body = request.get_json(silent=True) or {}
+    dry = bool(body.get("dry_run", False))
+
+    cache_dir, upload_dir, ref_paths, _ = _scan_targets(root)
+    cache_files = _list_cache_to_delete(cache_dir)
+    upload_orphans = _list_orphan_uploads(upload_dir, ref_paths, root)
+
+    if dry:
+        return jsonify({
+            "dry_run": True,
+            "will_delete": {
+                "cache_files": len(cache_files),
+                "upload_orphans": len(upload_orphans),
+            }
+        })
+
+    n1 = _delete_files(cache_files)
+    n2 = _delete_files(upload_orphans)
+    n3 = _delete_empty_dirs(root)
+
+    return jsonify({
+        "dry_run": False,
+        "deleted": {
+            "cache_files": n1,
+            "upload_orphans": n2,
+            "empty_dirs": n3
+        }
+    })
+# ===== end Maintenance =====
 
 # -----------------------
 # 启动入口

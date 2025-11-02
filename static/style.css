@@ -2,13 +2,16 @@
     box-sizing: border-box
 }
 
+:root { --topbar-h: 52px; }
+
 body {
     margin: 0;
-    font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial
+    font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    padding-top: var(--topbar-h); 
 }
 
 .topbar {
-    height: 52px;
+    height: var(--topbar-h);
     background: #111;
     color: #eee;
     display: flex;
@@ -16,8 +19,8 @@ body {
     justify-content: space-between;
     padding: 0 12px;
     gap: 12px;
-    position: sticky;
-    top: 0
+    position: fixed;
+    top: 0; left: 0; right: 0;
 }
 
 .topbar .hint {
@@ -41,11 +44,25 @@ body {
     color: #ddd
 }
 
+.grid2 {
+    height: calc(100vh - var(--topbar-h));
+    overflow: hidden;
+}
+
+.pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .editor {
-    width: 100%;
-    height: 65vh;
-    border: 1px solid #222;
-    border-radius: 6px
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+}
+
+.pane+.pane {
+    overflow: auto;
 }
 
 .tabs {
@@ -111,13 +128,20 @@ body {
 
 .console {
     margin-top: 8px;
-    height: 160px;
+    height: auto;
     overflow: auto;
     background: #050505;
     border: 1px solid #1f2937;
     border-radius: 6px;
     padding: 6px;
     font-family: ui-monospace, Consolas, monospace
+}
+
+.console{
+  flex: 0 0 200px;        /* 固定 200px，可按喜好调成 180/240 */
+  height: auto;
+  overflow: auto;         /* 多行日志内部滚动 */
+  margin-top: 8px;
 }
 
 .console .err {
@@ -165,4 +189,68 @@ select {
 
 button:hover {
     filter: brightness(1.1)
+}
+
+/* === 三列布局与预览优化 === */
+.grid3 {
+  display: grid;
+  grid-template-columns: 300px 1fr 420px; /* 左窄/中宽/右侧栏 */
+  gap: 12px;
+  padding: 12px;
+}
+
+.pane--narrow {
+  min-width: 260px;
+  max-width: 340px;
+}
+
+.pane--preview {
+  /* 中间栏自然占满 */
+}
+
+.pane--side {
+  min-width: 320px;
+  max-width: 520px;
+}
+
+/* 让预览更大且保持16:9；内部video自适应 */
+.video-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111;         /* 深色占位 */
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset;
+  margin-bottom: 8px;
+}
+.video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* 右栏 TOML 输出撑满 */
+.kv--full {
+  min-height: 60vh;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 行内控件间距更紧凑 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 小屏降级为单列/两列 */
+@media (max-width: 1200px) {
+  .grid3 { grid-template-columns: 280px 1fr; }
+  .pane--side { grid-column: 1 / -1; }
+}
+@media (max-width: 780px) {
+  .grid3 { grid-template-columns: 1fr; }
+  .pane--narrow, .pane--side { max-width: none; }
 }
