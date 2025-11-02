@@ -2,13 +2,16 @@
     box-sizing: border-box
 }
 
+:root { --topbar-h: 52px; }
+
 body {
     margin: 0;
-    font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial
+    font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    padding-top: var(--topbar-h); 
 }
 
 .topbar {
-    height: 52px;
+    height: var(--topbar-h);
     background: #111;
     color: #eee;
     display: flex;
@@ -16,8 +19,8 @@ body {
     justify-content: space-between;
     padding: 0 12px;
     gap: 12px;
-    position: sticky;
-    top: 0
+    position: fixed;
+    top: 0; left: 0; right: 0;
 }
 
 .topbar .hint {
@@ -41,11 +44,25 @@ body {
     color: #ddd
 }
 
+.grid2 {
+    height: calc(100vh - var(--topbar-h));
+    overflow: hidden;
+}
+
+.pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .editor {
-    width: 100%;
-    height: 65vh;
-    border: 1px solid #222;
-    border-radius: 6px
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+}
+
+.pane+.pane {
+    overflow: auto;
 }
 
 .tabs {
