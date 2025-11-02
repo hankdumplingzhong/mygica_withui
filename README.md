@@ -204,6 +204,7 @@ cache_dir/
 - 依赖：`flask` 、`watchdog`
 
 ## 目前结构
+```
 /Root
   ├─ A_compiler.py
   ├─ structure.py
@@ -214,6 +215,7 @@ cache_dir/
   └─ static/
       ├─ app.js
       └─ style.css
+```
 
 ## 启动服务
 > python ui_server.py --root .
@@ -229,18 +231,18 @@ cache_dir/
 
 ## 支持的 TOML 写法（fps 与后缀）
 - 顶层 fps（支持分数字符串）：
-'''
+```
 fps = "24000/1001"      # 或 fps = 23.976 / fps = 30
 project_suffix = ".mp4" # 等价于 suffix
-'''
+```
 
 - [project] 节点：
-'''
+```
 [project]
 fps = 30
 start = 0
 suffix = ".mp4"
-'''
+```
 
 ## 页面区域
 
