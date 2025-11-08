@@ -1,6 +1,7 @@
 
 python -m uv sync
 ffmpeg -hide_banner -version
-python -m uv run A_compiler.py
+python -m uv run A_compiler.py --config "示例.MyGICA.toml"
+python -m uv run A_compiler.py --config "日不落的爱音.toml"
 
 python ui_server.py --root .

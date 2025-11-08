@@ -1,4 +1,3 @@
-// app.js  —— drop-in replacement
 let editor; let currentFile = ""; let currentModel = null; let sse = null;
 
 function $(sel) { return document.querySelector(sel); }
@@ -69,8 +68,8 @@ async function refreshList() {
 async function loadFile() {
   // 对选择名做归一化，并回写下拉，保证一致性
   let name = $('#fileSelect').value; if (!name) return;
-  name = normalizeMyGicaName(name);            // NEW
-  $('#fileSelect').value = name;               // NEW
+  name = normalizeMyGicaName(name);
+  $('#fileSelect').value = name;
   const { text } = await api('/project/load?file=' + encodeURIComponent(name));
   currentFile = name; editor.setValue(text); parseNow(); outputsList();
 }

@@ -28,14 +28,11 @@ JOBS_LOCK = threading.Lock()
 
 
 def inside_root(name: str) -> pathlib.Path:
-    """限制访问：仅允许根目录下的普通文件名，不允许子目录/.. 跳转。"""
-    if not ALLOWED_PATTERNS.match(name or ""):
+    if not name or any(c in name for c in ('/', '\\')):
         abort(400, description="Illegal filename.")
     p = ROOT_DIR / name
-    # 只允许在根目录下且是文件
     if not p.exists() or not p.is_file():
         abort(404, description="File not found in project root.")
-    # 再确保没有越权
     try:
         p.resolve().relative_to(ROOT_DIR.resolve())
     except Exception:
