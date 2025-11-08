@@ -39,6 +39,15 @@ VIS_SOURCE_JSON = "vis_source.json"
 
 UPLOAD_URL_PREFIXES = ["/media/", "/uploads/"]
 
+# === 基础路径（基于全局变量） ===
+ROOT_DIR = Path(".").resolve()
+CACHE_DIR = ROOT_DIR / CACHE_DIR_NAME
+UPLOAD_DIR = ROOT_DIR / UPLOAD_DIR_NAME
+VIS_JSON_PATH = ROOT_DIR / VIS_SOURCE_JSON
+
+FRAMES_ROOT = CACHE_DIR / "frames"  # 统一放帧相关记录文件
+FRAMES_ROOT.mkdir(parents=True, exist_ok=True)
+
 def get_upload_dir():
     """上传目录"""
     p = (ROOT_DIR / UPLOAD_DIR_NAME).resolve()
@@ -392,16 +401,116 @@ def outputs_get(fname: str):
         abort(403)
     return send_from_directory(base, fname, as_attachment=False)
 
-def _load_vis_sources(root: Path) -> Dict:
-    js_path = root / VIS_SOURCE_JSON
-    if not js_path.exists():
+def _load_vis_sources() -> dict:
+    """载入 vis_source.json；失败返回空对象。"""
+    if not VIS_JSON_PATH.exists():
+        logger.warning("VIS source json not found: {}", VIS_JSON_PATH)
         return {}
     try:
-        with open(js_path, "r", encoding="utf-8") as f:
-            return json.load(f) or {}
+        return json.loads(VIS_JSON_PATH.read_text("utf-8"))
     except Exception as e:
-        print(f"[cleanup] fail to read {js_path}: {e}")
+        logger.error("Failed to parse {}: {}", VIS_JSON_PATH, e)
         return {}
+
+def _resolve_media_path(item: dict) -> Path | None:
+    """
+    将 vis_source.json 中的记录映射到物理文件路径。
+    - 若 url 以 UPLOAD_URL_PREFIXES 开头，则映射到 UPLOAD_DIR/<basename>
+    - 否则使用 path；相对路径按 ROOT_DIR 解析
+    """
+    url = (item.get("url") or "").strip()
+    path = (item.get("path") or "").strip()
+
+    # 命中上传前缀：落到 user_uploads
+    for pref in UPLOAD_URL_PREFIXES:
+        if url.startswith(pref):
+            basename = url.split("/")[-1]
+            p = (UPLOAD_DIR / basename).resolve()
+            if p.exists():
+                return p
+            logger.warning("URL mapped file not found: {} -> {}", url, p)
+            break  # 命中过前缀但没有文件，跳出前缀循环，回退用 path
+
+    if path:
+        p = Path(path)
+        if not p.is_absolute():
+            p = (ROOT_DIR / p).resolve()
+        if p.exists():
+            return p
+        logger.warning("Path in VIS not found: {}", p)
+
+    return None
+
+
+def _probe_fps(media_path: Path) -> float:
+    """优先 avg_frame_rate，其次 r_frame_rate；失败回退 30fps。"""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=avg_frame_rate,r_frame_rate",
+        "-of", "default=nw=1:nk=1", str(media_path),
+    ]
+    try:
+        out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip().splitlines()
+        for line in out:
+            if "/" in line:
+                num_s, den_s = line.split("/", 1)
+                try:
+                    num = float(num_s)
+                    den = float(den_s)
+                    if den != 0.0:
+                        fps = num / den
+                        if 5.0 <= fps <= 120.0:
+                            return fps
+                except Exception:
+                    # 忽略非数值行
+                    pass
+    except subprocess.CalledProcessError as e:
+        logger.error("ffprobe failed on {}: {}", media_path, e)
+
+    logger.warning("Fallback fps=30 for {}", media_path)
+    return 30.0
+
+
+def _key_dir(key: str) -> Path:
+    d = FRAMES_ROOT / key
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _read_records_any(key: str) -> list:
+    """
+    读取已记录帧号：
+    - 优先读 records.json（格式如 [12, 240, 835]）
+    - 若不存在则尝试 index.json 推断：
+        * {"frame":123} 或 {"file":"000123.jpg"} 或 {"t":123}
+    """
+    kdir = _key_dir(key)
+    rec = kdir / "records.json"
+    if rec.exists():
+        try:
+            arr = json.loads(rec.read_text("utf-8"))
+            # 保障都是 int
+            return sorted({int(v) for v in arr})
+        except Exception as e:
+            logger.error("Failed to parse records.json for {}: {}", key, e)
+
+    idx = kdir / "index.json"
+    frames = []
+    if idx.exists():
+        try:
+            data = json.loads(idx.read_text("utf-8"))
+            for it in data:
+                if "frame" in it:
+                    frames.append(int(it["frame"]))
+                elif "file" in it:
+                    stem = str(it["file"]).split(".", 1)[0]
+                    if stem.isdigit():
+                        frames.append(int(stem))
+                elif "t" in it:
+                    frames.append(int(it["t"]))
+        except Exception as e:
+            logger.error("Failed to parse index.json for {}: {}", key, e)
+    return sorted(set(frames))
 
 def _collect_referenced_paths(root: Path) -> Set[Path]:
     """
@@ -463,6 +572,42 @@ def _list_cache_to_delete(cache_dir: Path) -> Set[Path]:
                 to_del.add(_abs(p))
     return to_del
 
+@app.get("/frames/bookmarks")
+def frames_bookmarks():
+    """
+    返回指定 key 的帧号表与 fps、times（秒）。
+    params:
+      - key: vis_source.json 的键名（如 go1）
+    response:
+      { "key": str, "fps": float, "count": int, "frames": [int], "times": [float] }
+    """
+    key = (request.args.get("key") or "").strip()
+    if not key:
+        return abort(400, "missing key")
+
+    sources = _load_vis_sources()
+    info = sources.get(key)
+    if not info:
+        return abort(404, f"key not found in {VIS_SOURCE_JSON}: {key}")
+
+    media = _resolve_media_path(info)
+    if not media:
+        return abort(404, f"media not found for key={key}")
+
+    fps = _probe_fps(media)
+    frames = _read_records_any(key)
+    times = [round(f / fps, 3) for f in frames]
+
+    logger.info("bookmarks key={} fps={} count={}", key, fps, len(frames))
+    return jsonify({
+        "key": key,
+        "fps": round(fps, 6),
+        "count": len(frames),
+        "frames": frames,
+        "times": times,
+    })
+
+# 清理用
 def _list_orphan_uploads(upload_dir: Path, ref_paths: Set[Path], root: Path) -> Set[Path]:
     """在严格绝对路径比对之外，增加一个“文件名兜底”以避免误删。"""
     orphans = set()

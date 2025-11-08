@@ -62,6 +62,7 @@
         <div class="row">
         <select id="previewSource"></select>
         <button id="btnLoadPreview">载入预览</button>
+        <button id="btnLoadKeyframes">加载已记录帧</button>
         <!-- 你已有的“用当前时间设为Clip Start/End”按钮 -->
         <button id="btnMarkStart">用当前时间设为 Clip Start</button>
         <button id="btnMarkEnd">用当前时间设为 Clip End</button>
@@ -69,6 +70,13 @@
 
         <div class="video-wrap">
         <video id="preview" controls preload="metadata"></video>
+        </div>
+        <!-- 关键帧列表 -->
+        <div id="keyframePanel" class="list" style="display:none; margin-top:8px"></div>
+        
+        <div class="row">
+          <input id="rangeText" placeholder="本段字幕（可留空；支持多行换行）" style="min-width:360px; flex:1" />
+          <button id="btnClearText">清空字幕</button>
         </div>
 
         <h4>Clips</h4>

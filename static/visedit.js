@@ -1,6 +1,11 @@
 const $ = s => document.querySelector(s);
 const api = async (p, o) => { const r = await fetch(p, o); if (!r.ok) throw new Error(await r.text()); return r.json(); };
 
+function tomlQuote(s) {
+  // 用双引号串，转义 \、"、换行 → \n
+  return `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`;
+}
+
 // 兼容两种 items 结构：string 或 {path,url}
 function normalizeItem(v) {
     if (typeof v === 'string') return { path: v, url: undefined };
@@ -105,7 +110,8 @@ function bind() {
     };
 
     $('#btnGen').onclick = genToml;
-
+    const clearTxtBtn = $('#btnClearText');
+    if (clearTxtBtn) clearTxtBtn.onclick = () => { $('#rangeText').value = ''; };
     bindPreview();
 }
 
@@ -216,11 +222,24 @@ async function loadPreviewForKey(key) {
 // 绑定按钮
 function bindPreviewButtons() {
     const sel = document.querySelector('#previewSource');
+    const kfBtn = document.querySelector('#btnLoadKeyframes');
     document.querySelector('#btnLoadPreview').onclick = () => {
         if (!sel.value) return log('请选择要预览的素材键名', true);
         loadPreviewForKey(sel.value);
     };
-
+    // “加载已记录帧”按钮：展示帧号表，点击可跳转并暂停
+    if (kfBtn) {
+        kfBtn.onclick = async () => {
+            const key = sel.value;
+            if (!key) return log('请选择要查看的素材键名', true);
+            try {
+                await showKeyframesForKey(key);
+                log(`已加载 ${key} 的帧号表`);
+            } catch (e) {
+                log(String(e.message || e), true);
+            }
+        };
+    }
     // 用当前时间标记 clip start/end
     const v = document.querySelector('#preview');
     const fpsVal = () => parseFPS(document.querySelector('#fpsInput').value) || 24;
@@ -238,29 +257,40 @@ function bindPreviewButtons() {
 
 // 生成 TOML 后显示在右栏
 function genToml() {
-    const rs = Number(document.querySelector('#rangeStart').value);
-    const re = Number(document.querySelector('#rangeEnd').value);
-    if (!(Number.isFinite(rs) && Number.isFinite(re) && re > rs)) { log('Range 起止不合法', true); return; }
-    if (!CLIPS.length) { log('请添加至少一个 clip', true); return; }
+  const rs = Number(document.querySelector('#rangeStart').value);
+  const re = Number(document.querySelector('#rangeEnd').value);
+  if (!(Number.isFinite(rs) && Number.isFinite(re) && re > rs)) { log('Range 起止不合法', true); return; }
+  if (!CLIPS.length) { log('请添加至少一个 clip', true); return; }
 
-    const lines = [];
-    lines.push('[[ranges]]');
-    lines.push(`start = ${rs}`);
-    lines.push(`end = ${re}`);
-    CLIPS.forEach(c => {
-        lines.push('[[ranges.clips]]');
-        lines.push(`source = '${c.source}'`);
-        if (Number.isFinite(c.start)) lines.push(`start = ${c.start}`);
-        if (Number.isFinite(c.end)) lines.push(`end = ${c.end}`);
-        if (Number.isFinite(c.volume)) lines.push(`volume = ${c.volume}`);
-        lines.push('');
-    });
+  const textRaw = (document.querySelector('#rangeText')?.value || '').trim();
 
-    const out = document.querySelector('#tomlOut');
-    out.textContent = lines.join('\n');
-    out.scrollTop = out.scrollHeight;
-    log('已生成 TOML 片段');
+  const lines = [];
+  lines.push('[[ranges]]');
+  lines.push(`start = ${rs}`);
+  lines.push(`end = ${re}`);
+
+  // 字幕(可选)
+  if (textRaw) {
+    lines.push('[[ranges.texts]]');
+    lines.push(`text = ${tomlQuote(textRaw)}`);
+  }
+
+  // Clips
+  CLIPS.forEach(c => {
+    lines.push('[[ranges.clips]]');
+    lines.push(`source = '${c.source}'`);
+    if (Number.isFinite(c.start)) lines.push(`start = ${c.start}`);
+    if (Number.isFinite(c.end))   lines.push(`end = ${c.end}`);
+    if (Number.isFinite(c.volume)) lines.push(`volume = ${c.volume}`);
+    lines.push('');
+  });
+
+  const out = document.querySelector('#tomlOut');
+  out.textContent = lines.join('\n');
+  out.scrollTop = out.scrollHeight;
+  log('已生成 TOML 片段');
 }
+
 
 // 复制/清空 TOML
 function bindTomlButtons() {
@@ -273,4 +303,85 @@ function bindTomlButtons() {
     document.querySelector('#btnClearToml').onclick = () => {
         document.querySelector('#tomlOut').textContent = '';
     };
+}
+
+const KF_CACHE = {}; // series -> array of {change_id, frame_id}
+
+function resolveSeriesFromKey(key) {
+  const k = String(key || '').toLowerCase();
+  const m = k.match(/^([a-z]+)(\d{1,2})$/);
+  if (!m) return null;
+  const prefix = m[1];
+  const change_id = Number(m[2]);
+  if (prefix === 'go') return { series: 'mygo', change_id };
+  if (prefix === 'ji') return { series: 'mujica', change_id };
+  return { series: prefix, change_id }; // 兜底
+}
+
+async function ensureKeyframes(series) {
+  if (KF_CACHE[series]) return KF_CACHE[series];
+  const candidates = [
+    `/uploads/${series}_keyframes.json`,
+    `/static/${series}_keyframes.json`,
+    `/${series}_keyframes.json`,
+  ];
+  let lastErr = null;
+  for (const url of candidates) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (r.ok) {
+        KF_CACHE[series] = await r.json();
+        return KF_CACHE[series];
+      }
+      lastErr = new Error(`${r.status} ${r.statusText}`);
+    } catch (e) { lastErr = e; }
+  }
+  throw new Error(`找不到 ${series}_keyframes.json · ${lastErr ? lastErr.message : ''}`);
+}
+
+function framesToSeconds(frame, fps) { return Number(frame) / (fps || 24); }
+
+async function showKeyframesForKey(key) {
+  const info = resolveSeriesFromKey(key);
+  if (!info) return log(`无法从键名解析系列/集数：${key}`, true);
+
+  let data;
+  try { data = await ensureKeyframes(info.series); }
+  catch (e) { return log(e.message || String(e), true); }
+
+  const frames = (Array.isArray(data) ? data : [])
+    .filter(x => Number(x.change_id) === Number(info.change_id));
+
+  const panel = document.querySelector('#keyframePanel');
+  panel.innerHTML = '';
+
+  if (!frames.length) {
+    panel.style.display = 'block';
+    panel.innerHTML = `<div class="row">没有记录到 ${key} 的关键帧</div>`;
+    return;
+  }
+
+  frames.sort((a,b) => a.frame_id - b.frame_id);
+  const fps = parseFPS(document.querySelector('#fpsInput').value) || 24;
+  const v = document.querySelector('#preview');
+
+  const header = document.createElement('div');
+  header.className = 'row';
+  header.innerHTML = `<strong>${key}</strong> · ${frames.length} 个关键帧 · 点击跳转（FPS=${fps.toFixed ? fps.toFixed(3) : fps}）`;
+  panel.appendChild(header);
+
+  frames.forEach(it => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const sec = framesToSeconds(it.frame_id, fps);
+    row.innerHTML = `frame <strong>${it.frame_id}</strong>  ·  <span style="opacity:.8">${sec.toFixed(3)}s</span>`;
+    row.style.cursor = 'pointer';
+    row.onclick = () => {
+      if (!v || !v.src) return log('请先载入预览视频', true);
+      v.currentTime = sec;
+      v.pause(); // 精准定位后默认暂停，便于审帧；想播放再点播放
+    };
+    panel.appendChild(row);
+  });
+  panel.style.display = 'block';
 }
