@@ -1,4 +1,6 @@
+from __future__ import annotations
 import os, sys, re, json, queue, threading, argparse, subprocess, pathlib, time, json
+import tomllib
 from pathlib import Path
 from typing import Dict, Set, Tuple
 from datetime import datetime
@@ -11,6 +13,7 @@ from flask import (
     Response,
     abort,
 )
+from loguru import logger
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -30,28 +33,32 @@ JOB_ID_COUNTER = 0
 JOBS_LOCK = threading.Lock()
 
 CACHE_DIR_NAME = "cache_dir"
+OUTPUT_DIR_NAME = "cache_output"
 UPLOAD_DIR_NAME = "user_uploads"
 VIS_SOURCE_JSON = "vis_source.json"
 
 UPLOAD_URL_PREFIXES = ["/media/", "/uploads/"]
 
 def get_upload_dir():
-    p = ROOT_DIR / "user_uploads"
+    """上传目录"""
+    p = (ROOT_DIR / UPLOAD_DIR_NAME).resolve()
     p.mkdir(exist_ok=True)
     return p
 
-def inside_root(name: str) -> pathlib.Path:
-    if not name or any(c in name for c in ('/', '\\')):
-        abort(400, description="Illegal filename.")
-    p = ROOT_DIR / name
+def _inside_root(name: str) -> Path:
+    """校验文件名并返回路径"""
+    if not name or any(c in name for c in ("/", "\\")) or not ALLOWED_PATTERNS.match(name):
+        abort(400, description="非法文件名")
+    p = (ROOT_DIR / name).resolve()
     if not p.exists() or not p.is_file():
-        abort(404, description="File not found in project root.")
-    try:
-        p.resolve().relative_to(ROOT_DIR.resolve())
-    except Exception:
-        abort(403, description="Out of root.")
+        abort(404, description="未找到目标文件")
+    if ROOT_DIR.resolve() not in p.parents and p != ROOT_DIR.resolve():
+        abort(403, description="越界访问")
     return p
 
+def _abs(p: Path) -> Path:
+    """绝对化路径"""
+    return p.resolve(strict=False)
 
 @app.route("/")
 def home():
@@ -82,23 +89,22 @@ def project_list():
 
 
 @app.get("/project/load")
-def project_load():
-    name = request.args.get("file", "").strip()
-    p = inside_root(name)
-    text = p.read_text(encoding="utf-8")
+def project_load() -> Response:
+    name: str = request.args.get("file", "").strip()
+    p: Path = _inside_root(name)
+    text: str = p.read_text(encoding="utf-8")
     return jsonify({"text": text})
 
 
 @app.post("/project/save")
-def project_save():
-    data = request.get_json(force=True)
-    name = request.args.get("file", "").strip()
-    text = data.get("text", "")
-    # 保存时不再强制阻塞；解析仅用于返回提示
-    ok, errors, model = parse_toml_safe(text)
-    p = inside_root(name)
+def project_save() -> Response:
+    data: dict = request.get_json(force=True)
+    name: str = request.args.get("file", "").strip()
+    text: str = data.get("text", "")
+    ok, warnings, model = parse_toml_safe(text)
+    p: Path = _inside_root(name)
     p.write_text(text, encoding="utf-8")
-    return jsonify({"ok": True, "parsed": ok, "errors": errors})
+    return jsonify({"ok": True, "parsed": ok, "errors": warnings})
 
 
 @app.post("/project/parse")
@@ -177,13 +183,6 @@ def vis_upload():
 @app.get("/uploads/<path:fname>")
 def serve_uploads(fname):
     return send_from_directory(get_upload_dir(), fname, conditional=True)
-
-# --- 解析 TOML（宽容：支持顶层 fps / 分数字符串 / 别名字段） ---
-try:
-    import tomllib  # Python 3.11+
-except Exception:
-    import tomli as tomllib
-
 
 def parse_fps(value):
     """把 fps 解析成 float。支持数字、'23.976'、'24000/1001' 这类分数。失败返回 None。"""
@@ -306,7 +305,7 @@ def _reader_thread(proc, q: queue.Queue):
 def build_full():
     data = request.get_json(force=True)
     name = (data.get("file") or "").strip()
-    p = inside_root(name)
+    p = _inside_root(name)
 
     cmd = BUILD_CMD_TEMPLATE.format(file=p.name)
     env = os.environ.copy()
@@ -386,20 +385,12 @@ def outputs_list():
 
 
 @app.get("/outputs/<path:fname>")
-def outputs_get(fname):
-    # 只允许从 cache_output 取文件
-    base = ROOT_DIR / "cache_output"
-    try:
-        (base / fname).resolve().relative_to(base.resolve())
-    except Exception:
+def outputs_get(fname: str):
+    base: Path = ROOT_DIR / OUTPUT_DIR_NAME
+    target: Path = (base / fname).resolve()
+    if base.resolve() not in target.parents and target != base.resolve():
         abort(403)
     return send_from_directory(base, fname, as_attachment=False)
-
-def _abs(p: Path) -> Path:
-    try:
-        return p.resolve(strict=False)
-    except Exception:
-        return Path(str(p)).resolve(strict=False)
 
 def _load_vis_sources(root: Path) -> Dict:
     js_path = root / VIS_SOURCE_JSON

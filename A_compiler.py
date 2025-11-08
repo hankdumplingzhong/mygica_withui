@@ -506,7 +506,7 @@ def main() -> None:
     parser.add_argument("-c", "--config", "--file", dest="config", default=None,
                         help="Path or basename of the *.MyGICA.toml file")
 
-    # 注意：容忍未知参数，避免后端多传 flag 时直接报错
+    # 容忍未知参数，避免后端多传 flag 时直接报错
     args, unknown = parser.parse_known_args()
     chosen = args.config or args.toml or "示例.MyGICA.toml"
 
