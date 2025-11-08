@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os, sys, re, json, queue, threading, argparse, subprocess, pathlib, time, json
 import tomllib
 from pathlib import Path
@@ -22,7 +21,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 # 配置与安全（仅限 ROOT 内）
 # -----------------------
 ROOT_DIR: pathlib.Path
-ALLOWED_PATTERNS = re.compile(r"^([\w\- .()\[\]]+)$")  # 简单文件名白名单（根目录内）
+ALLOWED_PATTERNS = re.compile(r"^[^\x00-\x1F/\\:]+$")   # 简单文件名白名单（根目录内）
 BUILD_CMD_TEMPLATE = os.environ.get(
     "MYGICA_BUILD", f"{sys.executable} A_compiler.py --config {{file}}"
 )

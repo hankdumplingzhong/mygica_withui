@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from pathlib import Path
 from loguru import logger
@@ -29,6 +27,8 @@ def _load_vis_sources(root: Path) -> dict:
         return {}
     return data if isinstance(data, dict) else {}
 
+
+# 以下清理和维护用
 
 def _collect_referenced_paths(root: Path) -> set[Path]:
     """收集所有被引用的本地文件绝对路径（URL 前缀映射到 user_uploads）。"""
