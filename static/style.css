@@ -190,3 +190,67 @@ select {
 button:hover {
     filter: brightness(1.1)
 }
+
+/* === 三列布局与预览优化 === */
+.grid3 {
+  display: grid;
+  grid-template-columns: 300px 1fr 420px; /* 左窄/中宽/右侧栏 */
+  gap: 12px;
+  padding: 12px;
+}
+
+.pane--narrow {
+  min-width: 260px;
+  max-width: 340px;
+}
+
+.pane--preview {
+  /* 中间栏自然占满 */
+}
+
+.pane--side {
+  min-width: 320px;
+  max-width: 520px;
+}
+
+/* 让预览更大且保持16:9；内部video自适应 */
+.video-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111;         /* 深色占位 */
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset;
+  margin-bottom: 8px;
+}
+.video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* 右栏 TOML 输出撑满 */
+.kv--full {
+  min-height: 60vh;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 行内控件间距更紧凑 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 小屏降级为单列/两列 */
+@media (max-width: 1200px) {
+  .grid3 { grid-template-columns: 280px 1fr; }
+  .pane--side { grid-column: 1 / -1; }
+}
+@media (max-width: 780px) {
+  .grid3 { grid-template-columns: 1fr; }
+  .pane--narrow, .pane--side { max-width: none; }
+}

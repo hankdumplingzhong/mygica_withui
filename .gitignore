@@ -11,3 +11,6 @@ wheels/
 
 cache_dir
 cache_in
+
+# local user video upload
+user_uploads/
