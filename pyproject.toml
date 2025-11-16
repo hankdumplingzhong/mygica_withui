@@ -1,13 +1,38 @@
 [project]
 name = "MyGICA"
-version = "1.0.0"
-description = "My Glimpse Interface for Cutting Abandon of MyGO!!!!! & MUJICA"
+version = "1.0-alpha"
+description = "剪辑 MyGICA 视频的 MyGICA 工具, MyGICA 即 MyGO!!!!! & MUJICA"
 readme = "README.md"
-requires-python = ">=3.13"
+#license = { text = "AGPL-3.0-only" }
+authors = [{ name = "betterer", email = "2534666876@qq.com" }]
+requires-python = ">=3.11"
+classifiers = [
+    # 编程语言
+    "Programming Language :: Python :: 3",
+    # 许可证
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    # 系统无关性
+    "Operating System :: OS Independent",
+    # 项目状态
+    "Development Status :: 3 - Alpha",
+    # 目标用户
+    "Topic :: Scientific/Engineering",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Environment :: Console",
+]
 dependencies = [
+    "click>=8.3.1",
     "dacite>=1.9.2",
     "loguru>=0.7.3",
+    "natsort>=8.4.0",
     "numpy>=2.3.3",
     "pillow>=11.3.0",
     "pysrt>=1.1.2",
 ]
+
+[project.scripts]
+# `uv tool install ___` 创建命令
+MyGICA = "MyGICA.A_compiler:cli"
+srt2MyGICA = "MyGICA.srt_to_MyGICA:cli"
+MyGICA_cache_cleaner = "MyGICA.time_based_cache_cleaner:cli"

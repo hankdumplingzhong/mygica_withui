@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from betterer import subprocess_run
+from src.MyGICA.betterer import subprocess_run
 
 base = Path('cache_in/test_video_basic.mkv')
 base.parent.mkdir(parents=True, exist_ok=True)

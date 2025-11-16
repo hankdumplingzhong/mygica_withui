@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import click
 import pysrt
 
 
@@ -52,6 +53,12 @@ def adjust_subtitle(subtitle_path: Path, fps: float = 24000 / 1001) -> None:
         print()
 
 
-if __name__ == "__main__":
-    srt_file = Path('path/to/your/subtitle.srt')
+@click.command()
+@click.argument('srt_file', type=click.Path(exists=True, path_type=Path))
+def cli(srt_file: Path) -> None:
+    """调整字幕时间并输出为指定格式"""
     adjust_subtitle(srt_file)
+
+
+if __name__ == "__main__":
+    pass
