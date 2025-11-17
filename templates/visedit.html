@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyGICA · 可视化选段 → TOML</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/visedit.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="left">
+      <strong>可视化选段</strong>
+      <span class="hint"> · <a href="/" style="color:#9ca3af">主页</a></span>
+    </div>
+    <div class="right">
+      <button id="btnSaveSources">保存素材映射</button>
+      <button id="btnReloadSources">刷新</button>
+    </div>
+  </header>
+
+  <main class="grid3">
+    <!-- 左：素材映射（更窄） -->
+    <section class="pane pane--narrow">
+        <h3>素材（键名 → 本地路径）</h3>
+        <div class="list" id="sourcesList"></div>
+
+        <div class="row" style="margin-top:8px">
+        <input id="srcKey" placeholder="如 go1" />
+        <input id="srcPath" placeholder="本地绝对路径，如 D:\video\mygo1.mkv" />
+        <button id="btnAddSrc">添加/更新</button>
+        </div>
+
+        <!-- 你已有的日志框 -->
+        <div class="console" id="log"></div>
+
+        <!-- 你已有的上传区（上传并绑定） -->
+        <div class="row" style="margin-top:8px">
+        <input id="bindKey" placeholder="绑定到键名，如 go1" />
+        <input id="filePicker" type="file" />
+        <button id="btnUploadBind">上传并绑定</button>
+        </div>
+    </section>
+
+    <!-- 中：预览 + 片段编辑（更宽） -->
+    <section class="pane pane--preview">
+        <h3>生成 [[ranges]] 片段</h3>
+
+        <div class="row">
+        <label>FPS：
+            <input id="fpsInput" value="24000/1001" />
+        </label>
+        <span class="hint">可填 23.976 或 24000/1001</span>
+        </div>
+
+        <div class="row">
+        <label>Range start（帧）<input id="rangeStart" type="number" value="0"></label>
+        <label>Range end（帧）<input id="rangeEnd" type="number" value="240"></label>
+        </div>
+
+        <h4>预览</h4>
+        <div class="row">
+        <select id="previewSource"></select>
+        <button id="btnLoadPreview">载入预览</button>
+        <button id="btnLoadKeyframes">加载已记录帧</button>
+        <!-- 你已有的“用当前时间设为Clip Start/End”按钮 -->
+        <button id="btnMarkStart">用当前时间设为 Clip Start</button>
+        <button id="btnMarkEnd">用当前时间设为 Clip End</button>
+        </div>
+
+        <div class="video-wrap">
+        <video id="preview" controls preload="metadata"></video>
+        </div>
+        <!-- 关键帧列表 -->
+        <div id="keyframePanel" class="list" style="display:none; margin-top:8px"></div>
+        
+        <div class="row">
+          <input id="rangeText" placeholder="本段字幕（可留空；支持多行换行）" style="min-width:360px; flex:1" />
+          <button id="btnClearText">清空字幕</button>
+        </div>
+
+        <h4>Clips</h4>
+        <div class="list" id="clipsList"></div>
+        <div class="row">
+        <select id="clipSource"></select>
+        <input id="clipStart" type="number" placeholder="clip start 帧" />
+        <input id="clipEnd" type="number" placeholder="clip end 帧" />
+        <input id="clipVolume" type="number" step="0.1" placeholder="可选 volume dB（-50~0）" />
+        <button id="btnAddClip">添加 Clip</button>
+        </div>
+        <div style="margin-top:8px">
+        <button id="btnGen">生成 TOML 片段</button>
+        </div>
+    </section>
+
+    <!-- 右：TOML 输出（新列） -->
+    <section class="pane pane--side">
+        <h3>输出 TOML</h3>
+        <div class="row" style="gap:8px">
+        <button id="btnCopyToml">复制</button>
+        <button id="btnClearToml">清空</button>
+        </div>
+        <pre id="tomlOut" class="kv kv--full"></pre>
+    </section>
+  </main>
+
+</body>
+</html>

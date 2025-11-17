@@ -1,0 +1,271 @@
+* {
+    box-sizing: border-box
+}
+
+:root { --topbar-h: 52px; }
+
+body {
+    margin: 0;
+    font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    padding-top: var(--topbar-h); 
+    height:100%;
+}
+
+.topbar {
+    height: var(--topbar-h);
+    background: #111;
+    color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 12px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+}
+
+.topbar .hint {
+    opacity: .7;
+    margin-left: 6px
+}
+
+.grid2 {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px
+}
+
+.pane {
+    background: #0b0b0b;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 70vh;
+    color: #ddd
+}
+
+.grid2 {
+    height: calc(100vh - var(--topbar-h));
+    overflow: hidden;
+}
+
+.pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.grid2 > .pane { min-height: 0; }
+.grid2 > .pane:first-child {
+  overflow: auto;                 /* 左侧获得滚动权 */
+  -webkit-overflow-scrolling: touch; /* 移动端顺滑滚动 */
+}
+
+.editor {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+}
+
+.pane+.pane {
+    overflow: auto;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px
+}
+
+.tab {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer
+}
+
+.tab.active {
+    background: #234;
+    border-color: #456;
+    color: #eef
+}
+
+.tabpane {
+    display: none
+}
+
+.tabpane.active {
+    display: block
+}
+
+.kv {
+    background: #0d0d0d;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 8px;
+    white-space: pre-wrap
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 150px;
+    overflow: auto
+}
+
+.row {
+    background: #121212;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 6px
+}
+
+.badge {
+    display: inline-block;
+    background: #334155;
+    color: #e5e7eb;
+    border-radius: 10px;
+    padding: 0 6px;
+    margin-right: 6px
+}
+
+.console {
+    margin-top: 8px;
+    height: auto;
+    overflow: auto;
+    background: #050505;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    padding: 6px;
+    font-family: ui-monospace, Consolas, monospace
+}
+
+.console{
+  flex: 0 0 200px;        /* 固定 200px，可按喜好调成 180/240 */
+  height: auto;
+  overflow: auto;         /* 多行日志内部滚动 */
+  margin-top: 8px;
+}
+
+.console .err {
+    color: #fca5a5
+}
+
+.outputs {
+    margin-top: 10px
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px
+}
+
+.card {
+    background: #101010;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 8px
+}
+
+.card .meta {
+    margin-bottom: 6px;
+    color: #9ca3af
+}
+
+.card video {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid #222
+}
+
+button,
+select {
+    background: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer
+}
+
+button:hover {
+    filter: brightness(1.1)
+}
+
+/* === 三列布局与预览优化 === */
+.grid3 {
+  display: grid;
+  grid-template-columns: 300px 1fr 420px; /* 左窄/中宽/右侧栏 */
+  gap: 12px;
+  padding: 12px;
+}
+
+.pane--narrow {
+  min-width: 260px;
+  max-width: 340px;
+}
+
+.pane--side {
+  min-width: 320px;
+  max-width: 520px;
+}
+
+/* 让预览更大且保持16:9；内部video自适应 */
+.video-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111;         /* 深色占位 */
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset;
+  margin-bottom: 8px;
+}
+.video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* 右栏 TOML 输出撑满 */
+.kv--full {
+  min-height: 60vh;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 行内控件间距更紧凑 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 小屏降级为单列/两列 */
+@media (max-width: 1200px) {
+  .grid3 { grid-template-columns: 280px 1fr; }
+  .pane--side { grid-column: 1 / -1; }
+}
+@media (max-width: 780px) {
+  .grid3 { grid-template-columns: 1fr; }
+  .pane--narrow, .pane--side { max-width: none; }
+}
+
+.welcome-hero { margin: 20px 0 12px; }
+.welcome-hero-img {
+  display: block;
+  width: 100%;
+  max-height: 720px;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+}

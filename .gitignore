@@ -11,3 +11,9 @@ wheels/
 
 cache_dir
 cache_in
+
+# local user video upload
+user_uploads/
+
+# Hank's source dir for mygo and mujics
+video_sourcedir_Hank.txt
