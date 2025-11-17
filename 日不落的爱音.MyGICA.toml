@@ -45,7 +45,7 @@ ji13 = 'D:\qbitdownload\short\mujica\mujica13.mkv'
 black = 'cache_in\test_video_basic.mkv'
 # 由 0_gen_black.py 生成的测试视频
 
-bgm = 'E:\祥子的诱惑\千早不思议_v3.wav'
+bgm = 'E:\祥子的诱惑\日不落3_MixDown.wav'
 # 找个音频替换上面这个，默认需要这个文件存在
 
 san-anon = 'E:\MyGICA_withUI\圣爱音.jpg'

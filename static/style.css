@@ -8,6 +8,7 @@ body {
     margin: 0;
     font: 14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial;
     padding-top: var(--topbar-h); 
+    height:100%;
 }
 
 .topbar {
@@ -29,6 +30,8 @@ body {
 }
 
 .grid2 {
+    flex: 1 1 auto;
+    min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
@@ -53,6 +56,12 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 0;
+}
+
+.grid2 > .pane { min-height: 0; }
+.grid2 > .pane:first-child {
+  overflow: auto;                 /* 左侧获得滚动权 */
+  -webkit-overflow-scrolling: touch; /* 移动端顺滑滚动 */
 }
 
 .editor {
@@ -204,10 +213,6 @@ button:hover {
   max-width: 340px;
 }
 
-.pane--preview {
-  /* 中间栏自然占满 */
-}
-
 .pane--side {
   min-width: 320px;
   max-width: 520px;
@@ -253,4 +258,14 @@ button:hover {
 @media (max-width: 780px) {
   .grid3 { grid-template-columns: 1fr; }
   .pane--narrow, .pane--side { max-width: none; }
+}
+
+.welcome-hero { margin: 20px 0 12px; }
+.welcome-hero-img {
+  display: block;
+  width: 100%;
+  max-height: 720px;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
 }
